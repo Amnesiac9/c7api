@@ -1,4 +1,4 @@
-package structs
+package c7api
 
 import "time"
 
