@@ -27,9 +27,9 @@ func TestGetJSONFromC7(t *testing.T) {
 	goodAuth := AppAuthEncoded
 	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
 
-	jsonBytes, err := GetJsonFromC7(&urlString, &tenant, &goodAuth)
+	jsonBytes, statusCode, err := GetJsonFromC7(&urlString, &tenant, &goodAuth)
 	if err != nil {
-		t.Error("Error getting JSON from C7: ", err.Error())
+		t.Error("Error getting JSON from C7: ", statusCode, err.Error())
 		return
 	}
 
@@ -38,9 +38,9 @@ func TestGetJSONFromC7(t *testing.T) {
 		return
 	}
 
-	jsonBytes2, err := GetJsonFromC7(&urlString, &tenant, &badAuth)
+	jsonBytes2, statusCode, err := GetJsonFromC7(&urlString, &tenant, &badAuth)
 	if err == nil {
-		t.Error("Error, got JSON from C7 with bad auth: ", err.Error())
+		t.Error("Error, got JSON from C7 with bad auth: ", statusCode, err.Error())
 		return
 	}
 
