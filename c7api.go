@@ -1,4 +1,4 @@
-package c7api
+package C7API
 
 import (
 	"bytes"
