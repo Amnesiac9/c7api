@@ -25,7 +25,13 @@ jobs:
         go-version: '1.20'
 
     - name: Build
+      env:
+        appid: ${{ secrets.APPID }}
+        appkey: ${{ secrets.APPKEY }}
       run: go build -v ./...
 
     - name: Test
+      env:
+        appid: ${{ secrets.APPID }}
+        appkey: ${{ secrets.APPKEY }}
       run: go test -v ./...
