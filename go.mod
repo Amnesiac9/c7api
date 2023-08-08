@@ -1,4 +1,4 @@
-module github.com/Amnesiac9/C7API
+module github.com/Amnesiac9/c7api
 
 go 1.20
 
