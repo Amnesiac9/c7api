@@ -129,10 +129,10 @@ type C7Order struct {
 			// 	Y2023 int `json:"2023"`
 			// } `json:"yearlyValue"`
 		} `json:"orderInformation"`
-		// Phones []struct {
-		// 	ID    string `json:"id"`
-		// 	Phone string `json:"phone"`
-		// } `json:"phones"`
+		Phones []struct {
+			ID    string `json:"id"`
+			Phone string `json:"phone"`
+		} `json:"phones"`
 		Products []struct {
 			Product struct {
 				Image     string `json:"image"`
@@ -189,6 +189,7 @@ type C7Order struct {
 			//IsPriceOverride     bool    `json:"isPriceOverride"`
 			//OriginalPrice       float64 `json:"originalPrice"`
 			//ProductSlug                string   `json:"productSlug"`
+			//Vendor              string  `json:"vendor"`
 			HasInventory        bool    `json:"hasInventory"`
 			HasShipping         bool    `json:"hasShipping"`
 			Image               string  `json:"image"`
@@ -203,7 +204,6 @@ type C7Order struct {
 			Tax                 float64 `json:"tax"`
 			TaxType             string  `json:"taxType"`
 			Type                string  `json:"type"`
-			Vendor              string  `json:"vendor"`
 			VolumeInMl          int     `json:"volumeInML"`
 			Weight              float64 `json:"weight"`
 		} `json:"bundleItems"`
