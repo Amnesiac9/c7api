@@ -15,7 +15,7 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string) (*[]byte, er
 
 	req, err := http.NewRequest("GET", *urlString, nil)
 	if err != nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while creating request for C7, got: %v", err)}
+		return nil, fmt.Errorf("error creating GET request for C7: %v", err)
 	}
 
 	req.Header.Set("tenant", *tenant)
@@ -25,7 +25,7 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string) (*[]byte, er
 	// Make request to C7
 	response, err := client.Do(req)
 	if err != nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while making request to C7, got: %v", err)}
+		return nil, fmt.Errorf("error making GET request to C7: %v", err)
 	}
 
 	defer response.Body.Close()
@@ -33,7 +33,7 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string) (*[]byte, er
 	// Read the body into variable
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while reading response body from C7, got: %v", err)}
+		return nil, fmt.Errorf("error reading response body from C7: %v", err)
 	}
 
 	if response.StatusCode != 200 {
@@ -52,7 +52,7 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string) (*[]byte, er
 func PostJsonToC7(urlString *string, tenant *string, body *[]byte, auth *string) (*[]byte, error) {
 
 	if urlString == nil || tenant == nil || body == nil || auth == nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while posting JSON to C7, got: nil value in arguments")}
+		return nil, fmt.Errorf("while posting JSON to C7, got: nil value in arguments")
 	}
 
 	// prepare request
@@ -60,7 +60,7 @@ func PostJsonToC7(urlString *string, tenant *string, body *[]byte, auth *string)
 
 	req, err := http.NewRequest("POST", *urlString, bytes.NewBuffer(*body))
 	if err != nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while creating POST request to C7, got: %v", err)}
+		return nil, fmt.Errorf("error creating POST request to C7: %v", err)
 	}
 
 	// Set headers
@@ -71,7 +71,7 @@ func PostJsonToC7(urlString *string, tenant *string, body *[]byte, auth *string)
 	// Make request to C7
 	response, err := client.Do(req)
 	if err != nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while making POST request to C7, got: %v", err)}
+		return nil, fmt.Errorf("error making POST request to C7: %v", err)
 	}
 
 	defer response.Body.Close()
@@ -79,7 +79,7 @@ func PostJsonToC7(urlString *string, tenant *string, body *[]byte, auth *string)
 	// Read the body into variable
 	c7Body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while reading response body from C7, got: %v", err)}
+		return nil, fmt.Errorf("error reading response body from C7: %v", err)
 	}
 
 	if response.StatusCode != 200 {
@@ -89,7 +89,7 @@ func PostJsonToC7(urlString *string, tenant *string, body *[]byte, auth *string)
 	return &c7Body, nil
 }
 
-func DeleteFulfillmentFromC7(urlString *string, tenant *string, auth *string) (*[]byte, error) {
+func DeleteFromC7(urlString *string, tenant *string, auth *string) (*[]byte, error) {
 	if urlString == nil || tenant == nil || auth == nil {
 		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("nil value in arguments")}
 	}
@@ -97,7 +97,7 @@ func DeleteFulfillmentFromC7(urlString *string, tenant *string, auth *string) (*
 	// prepare request
 	client := &http.Client{}
 
-	req, err := http.NewRequest("DELETE", *urlString, bytes.NewBuffer(nil))
+	req, err := http.NewRequest("DELETE", *urlString, nil)
 	if err != nil {
 		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while creating DELETE request to C7, got: %v", err)}
 	}

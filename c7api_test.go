@@ -83,13 +83,6 @@ func TestPostJsonToC7(t *testing.T) {
 		"packageCount": 1
 	}`)
 
-	// Remove fulfillment
-	// _, err := DeleteFulfillmentFromC7(&urlStringRemoveFulfillment, &tenant, &goodAuth)
-	// if err != nil {
-	// 	t.Error("Error removing fulfillment: ", err.Error())
-	// 	return
-	// }
-
 	jsonBytes, err := PostJsonToC7(&urlString, &tenant, &blankBytes, &goodAuth)
 	if err == nil {
 		t.Error("Error should not be nil with blank bytes.")
