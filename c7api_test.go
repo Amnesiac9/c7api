@@ -45,7 +45,7 @@ func TestGetJSONFromC7(t *testing.T) {
 	}
 	fmt.Println(err.Error())
 
-	if err.Error() != `Status Code: 401, C7 Error: {"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}` {
+	if err.Error() != `status code: 401, error: {"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}` {
 		t.Error("Error, expected: ", `Status Code: 401, C7 Error: {"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`, " got: ", err.Error())
 		return
 	}
@@ -55,8 +55,8 @@ func TestGetJSONFromC7(t *testing.T) {
 		return
 	}
 
-	if jsonBytes != nil {
-		t.Error("JSON Bytes should be nil with bad auth")
+	if jsonBytes == nil {
+		t.Error("JSON Bytes should not be nil with bad auth")
 		return
 	}
 
