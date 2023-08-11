@@ -13,6 +13,11 @@ import (
 
 // Takes in a full URL string and request JSON from C7 and return it as a byte array
 func GetJsonFromC7(urlString *string, tenant *string, auth *string) (*[]byte, error) {
+
+	if urlString == nil || tenant == nil || auth == nil {
+		return nil, fmt.Errorf("error getting JSON from C7: nil value in arguments")
+	}
+
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", *urlString, nil)
@@ -54,7 +59,7 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string) (*[]byte, er
 func PostJsonToC7(urlString *string, tenant *string, body *[]byte, auth *string) (*[]byte, error) {
 
 	if urlString == nil || tenant == nil || body == nil || auth == nil {
-		return nil, fmt.Errorf("while posting JSON to C7, got: nil value in arguments")
+		return nil, fmt.Errorf("error posting JSON to C7: nil value in arguments")
 	}
 
 	// prepare request
@@ -93,7 +98,7 @@ func PostJsonToC7(urlString *string, tenant *string, body *[]byte, auth *string)
 
 func DeleteFromC7(urlString *string, tenant *string, auth *string) (*[]byte, error) {
 	if urlString == nil || tenant == nil || auth == nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("nil value in arguments")}
+		return nil, fmt.Errorf("nil value in arguments")
 	}
 
 	// prepare request
@@ -101,7 +106,7 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string) (*[]byte, err
 
 	req, err := http.NewRequest("DELETE", *urlString, nil)
 	if err != nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while creating DELETE request to C7, got: %v", err)}
+		return nil, fmt.Errorf("while creating DELETE request to C7, got: %v", err)
 	}
 
 	// Set headers
@@ -112,7 +117,7 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string) (*[]byte, err
 	// Make request to C7
 	response, err := client.Do(req)
 	if err != nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while making DELETE request to C7, got: %v", err)}
+		return nil, fmt.Errorf("while making DELETE request to C7, got: %v", err)
 	}
 
 	defer response.Body.Close()
@@ -120,7 +125,7 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string) (*[]byte, err
 	// Read the body into variable
 	c7Body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, C7Error{http.StatusInternalServerError, fmt.Errorf("while reading response body from C7, got: %v", err)}
+		return nil, fmt.Errorf("while reading response body from C7, got: %v", err)
 	}
 
 	if response.StatusCode != 204 {

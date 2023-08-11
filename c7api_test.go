@@ -60,6 +60,12 @@ func TestGetJSONFromC7(t *testing.T) {
 		return
 	}
 
+	_, err = GetJsonFromC7(nil, nil, nil)
+	if err == nil {
+		t.Error("Error should not be nil with nil params.")
+		return
+	}
+
 }
 
 func TestPostJsonToC7(t *testing.T) {
@@ -150,8 +156,60 @@ func TestPostJsonToC7(t *testing.T) {
 		return
 	}
 
+	_, err = PostJsonToC7(nil, nil, nil, nil)
+	if err == nil {
+		t.Error("Error should not be nil with nil params.")
+		return
+	}
+
 }
 
+func TestDeleteFromC7(t *testing.T) {
+
+	urlString := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/f1439243-ceee-4ed6-b08a-4bd12f36c63e"
+	tenant := "egyptian-thread-company"
+	goodAuth := AppAuthEncoded
+	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
+
+	bytes, err := DeleteFromC7(&urlString, &tenant, &badAuth)
+	if err == nil {
+		t.Error("Error should not be nil with bad auth.")
+		return
+	}
+
+	if err.(C7Error).StatusCode != 401 {
+		t.Error("Status code should be 401 with bad auth, got: ", err.(C7Error).StatusCode)
+		return
+	}
+
+	if bytes == nil {
+		t.Error("bytes from C7 should not be nil with bad auth")
+		return
+	}
+
+	bytes2, err := DeleteFromC7(&urlString, &tenant, &goodAuth)
+	if err == nil {
+		t.Error("Error should not be nil with good auth.")
+		return
+	}
+
+	if err.(C7Error).StatusCode != 422 {
+		t.Error("Status code should be 422 with good auth, got: ", err.(C7Error).StatusCode)
+		return
+	}
+
+	if bytes2 == nil {
+		t.Error("bytes2 from C7 should not be nil")
+		return
+	}
+
+	_, err = DeleteFromC7(nil, nil, nil)
+	if err == nil {
+		t.Error("Error should not be nil with nil params.")
+		return
+	}
+
+}
 func TestFormatDatesForC7(t *testing.T) {
 	testParams := []string{"01/02/2006 15:04", "01/02/2025 15:04", "01/02/2006", ""}
 	expected := []string{"2006-01-02T15:04:00.000Z", "2025-01-02T15:04:00.000Z", "01/02/2006", ""}
