@@ -25,10 +25,12 @@ jobs:
       env:
         appid: ${{ secrets.APPID }}
         appkey: ${{ secrets.APPKEY }}
+        testTenant: ${{ secrets.TESTTENANT }}
       run: go build -v ./...
 
     - name: Test
       env:
         appid: ${{ secrets.APPID }}
         appkey: ${{ secrets.APPKEY }}
+        testTenant: ${{ secrets.TESTTENANT }}
       run: go test -v ./...
