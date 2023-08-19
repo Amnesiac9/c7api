@@ -11,19 +11,17 @@ import (
 
 var _ = godotenv.Load(".env")
 var (
-	// App C7 Basic Auth Credentials
-	AppAuth = fmt.Sprintf("%s:%s",
+	AppAuthEncoded = "Basic " + base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s",
 		os.Getenv("appid"),
 		os.Getenv("appkey"),
-	)
-
-	AppAuthEncoded = "Basic " + base64.StdEncoding.EncodeToString([]byte(AppAuth))
+	)))
+	testTenant = os.Getenv("testTenant")
 )
 
 func TestGetJSONFromC7(t *testing.T) {
 
 	urlString := "https://api.commerce7.com/v1/order?orderPaidDate=btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z"
-	tenant := "egyptian-thread-company"
+	tenant := testTenant
 	goodAuth := AppAuthEncoded
 	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
 
@@ -73,7 +71,7 @@ func TestPostJsonToC7(t *testing.T) {
 	urlString := "https://api.commerce7.com/v1/order"
 	urlStringFulfillment := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/all"
 	//urlStringRemoveFulfillment := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/f1439243-ceee-4ed6-b08a-4bd12f36c63e"
-	tenant := "egyptian-thread-company"
+	tenant := testTenant
 	goodAuth := AppAuthEncoded
 	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
 
@@ -167,10 +165,11 @@ func TestPostJsonToC7(t *testing.T) {
 func TestDeleteFromC7(t *testing.T) {
 
 	urlString := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/f1439243-ceee-4ed6-b08a-4bd12f36c63e"
-	tenant := "egyptian-thread-company"
+	tenant := testTenant
 	goodAuth := AppAuthEncoded
 	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
 
+	// Test 1
 	bytes, err := DeleteFromC7(&urlString, &tenant, &badAuth)
 	if err == nil {
 		t.Error("Error should not be nil with bad auth.")
@@ -187,6 +186,7 @@ func TestDeleteFromC7(t *testing.T) {
 		return
 	}
 
+	// Test 2
 	bytes2, err := DeleteFromC7(&urlString, &tenant, &goodAuth)
 	if err == nil {
 		t.Error("Error should not be nil with good auth.")
