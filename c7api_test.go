@@ -226,3 +226,15 @@ func TestFormatDatesForC7(t *testing.T) {
 		}
 	}
 }
+
+func TestGetFulfillmentId(t *testing.T) {
+	testParams := []int{1232, 1235, 999}
+	expected := []string{"9475723a-8f11-4111-9234-852d85813581", "075baea0-34fe-4ac4-815d-57bd79bedf5e", ""}
+
+	for i, param := range testParams {
+		result, _ := GetFulfillmentId(param, testTenant, AppAuthEncoded)
+		if result != expected[i] {
+			t.Error("Expected ", expected[i], " got ", result)
+		}
+	}
+}
