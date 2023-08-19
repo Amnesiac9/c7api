@@ -128,7 +128,7 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string) (*[]byte, err
 		return nil, fmt.Errorf("while reading response body from C7, got: %v", err)
 	}
 
-	if response.StatusCode != 204 {
+	if response.StatusCode != 200 { // C7 docs are lying, they return 200 on success along with the full order object.
 		return &c7Body, C7Error{response.StatusCode, fmt.Errorf(string(c7Body))}
 	}
 
