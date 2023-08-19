@@ -2,10 +2,12 @@ package c7api
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -149,4 +151,47 @@ func FormatDatesForC7(date string) (string, error) {
 	}
 
 	return dateFormatted.Format("2006-01-02T15:04:05.000Z"), err
+}
+
+func GetFulfillmentId(OrderNumber int, tenant string, auth string) (string, error) {
+
+	orderUrl := "https://api.commerce7.com/v1/order?q=" + strconv.Itoa(OrderNumber)
+	// Get the order from C7
+	ordersBytes, err := GetJsonFromC7(&orderUrl, &tenant, &auth)
+	if err != nil {
+		return "", err
+	}
+
+	// Unmarshal the order
+	var orders C7Orders
+	err = json.Unmarshal(*ordersBytes, &orders)
+	if err != nil {
+		return "", err
+	}
+
+	// Get the fulfillment ID
+	if len(orders.Orders) == 0 {
+		return "", errors.New("no orders found")
+	}
+	if len(orders.Orders[0].Fulfillments) == 0 {
+		return "", errors.New("no fulfillments found")
+	}
+
+	return orders.Orders[0].Fulfillments[0].ID, nil
+
+}
+
+func DeleteC7Fulfillment(orderId string, fulfillmentId string, tenant string, auth string) error {
+
+	deleteUrl := "https://api.commerce7.com/v1/order/" + orderId + "/fulfillment/" + fulfillmentId
+	// DELETE /order/{:id}/fulfillment/{:id}
+	_, err := DeleteFromC7(&deleteUrl, &tenant, &auth)
+	if err != nil {
+		return err
+	}
+
+	//fmt.Println("Delete Fulfillment Response: ", string(*bytes))
+
+	return nil
+
 }
