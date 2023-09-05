@@ -33,11 +33,11 @@ import (
 // Will wait 500ms between attempts.
 func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int) (*[]byte, error) {
 
-	const SLEEP_TIME = 500 * time.Millisecond
-
 	if urlString == nil || tenant == nil || auth == nil {
 		return nil, fmt.Errorf("error getting JSON from C7: nil value in arguments")
 	}
+
+	const SLEEP_TIME = 500 * time.Millisecond
 
 	if attempts < 1 {
 		attempts = 1
@@ -94,16 +94,21 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int
 //
 // URL Example: [Your Web Endpoint]?action=shipnotify&order_number=[Order Number]&carrier=[Carrier]&service=&tracking_number=[Tracking Number]
 // URL END POINT]?action=shipnotify&order_number=ABC123&carrier=USPS&service=&tracking_number=9511343223432432432
-func PostJsonToC7(urlString *string, tenant *string, body *[]byte, auth *string) (*[]byte, error) {
+func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *string, attempts int) (*[]byte, error) {
 
-	if urlString == nil || tenant == nil || body == nil || auth == nil {
+	if urlString == nil || tenant == nil || reqBody == nil || auth == nil {
 		return nil, fmt.Errorf("error posting JSON to C7: nil value in arguments")
 	}
 
-	// prepare request
-	client := &http.Client{}
+	const SLEEP_TIME = 500 * time.Millisecond
 
-	req, err := http.NewRequest("POST", *urlString, bytes.NewBuffer(*body))
+	if attempts < 1 {
+		attempts = 1
+	} else if attempts > 10 {
+		attempts = 10
+	}
+
+	req, err := http.NewRequest("POST", *urlString, bytes.NewBuffer(*reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("error creating POST request to C7: %v", err)
 	}
@@ -114,29 +119,47 @@ func PostJsonToC7(urlString *string, tenant *string, body *[]byte, auth *string)
 	req.Header.Add("Authorization", *auth) //AppAuthEncoded
 
 	// Make request to C7
-	response, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error making POST request to C7: %v", err)
+	client := &http.Client{}
+	response := &http.Response{StatusCode: 0}
+	body := []byte{}
+	var i int
+
+	for i = 0; i < attempts; i++ {
+		response, err = client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("error making POST request to C7: %v", err)
+		}
+
+		defer response.Body.Close()
+
+		// Read the body into variable
+		body, err = io.ReadAll(response.Body)
+		if err != nil {
+			return nil, fmt.Errorf("error reading response body from C7: %v", err)
+		}
+
+		if response.StatusCode == 200 {
+			return &body, nil
+		} else {
+			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(c7Body))
+			time.Sleep(SLEEP_TIME)
+		}
 	}
 
-	defer response.Body.Close()
-
-	// Read the body into variable
-	c7Body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response body from C7: %v", err)
-	}
-
-	if response.StatusCode != 200 {
-		return &c7Body, C7Error{response.StatusCode, fmt.Errorf(string(c7Body))}
-	}
-
-	return &c7Body, nil
+	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
 }
 
-func DeleteFromC7(urlString *string, tenant *string, auth *string) (*[]byte, error) {
+func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int) (*[]byte, error) {
 	if urlString == nil || tenant == nil || auth == nil {
 		return nil, fmt.Errorf("nil value in arguments")
+	}
+
+	const SLEEP_TIME = 500 * time.Millisecond
+
+	if attempts < 1 {
+		attempts = 1
+	} else if attempts > 10 {
+		attempts = 10
 	}
 
 	req, err := http.NewRequest("DELETE", *urlString, nil)
@@ -151,24 +174,35 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string) (*[]byte, err
 
 	// Make request to C7
 	client := &http.Client{}
-	response, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("while making DELETE request to C7, got: %v", err)
+	response := &http.Response{StatusCode: 0}
+	body := []byte{}
+	var i int
+
+	for i = 0; i < attempts; i++ {
+
+		response, err = client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("while making DELETE request to C7, got: %v", err)
+		}
+
+		defer response.Body.Close()
+
+		// Read the body into variable
+		body, err = io.ReadAll(response.Body)
+		if err != nil {
+			return nil, fmt.Errorf("while reading response body from C7, got: %v", err)
+		}
+
+		if response.StatusCode == 200 { // C7 docs are lying, they return 200 on success along with the full order object.
+			return &body, nil
+		} else {
+			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
+			time.Sleep(SLEEP_TIME)
+		}
 	}
 
-	defer response.Body.Close()
-
-	// Read the body into variable
-	c7Body, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, fmt.Errorf("while reading response body from C7, got: %v", err)
-	}
-
-	if response.StatusCode != 200 { // C7 docs are lying, they return 200 on success along with the full order object.
-		return &c7Body, C7Error{response.StatusCode, fmt.Errorf(string(c7Body))}
-	}
-
-	return &c7Body, nil
+	// Response is not 200, return error
+	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
 
 }
 
@@ -215,11 +249,11 @@ func GetFulfillmentId(OrderNumber int, tenant string, auth string) (string, erro
 
 }
 
-func DeleteC7Fulfillment(orderId string, fulfillmentId string, tenant string, auth string) error {
+func DeleteC7Fulfillment(orderId string, fulfillmentId string, tenant string, auth string, attempts int) error {
 
 	deleteUrl := "https://api.commerce7.com/v1/order/" + orderId + "/fulfillment/" + fulfillmentId
 	// DELETE /order/{:id}/fulfillment/{:id}
-	_, err := DeleteFromC7(&deleteUrl, &tenant, &auth)
+	_, err := DeleteFromC7(&deleteUrl, &tenant, &auth, attempts)
 	if err != nil {
 		return err
 	}

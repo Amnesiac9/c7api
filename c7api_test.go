@@ -88,7 +88,7 @@ func TestPostJsonToC7(t *testing.T) {
 	}`)
 
 	// Test posting blank bytes
-	jsonBytes, err := PostJsonToC7(&urlString, &tenant, &blankBytes, &goodAuth)
+	jsonBytes, err := PostJsonToC7(&urlString, &tenant, &blankBytes, &goodAuth, 2)
 	if err == nil {
 		t.Error("Error should not be nil with blank bytes.")
 		return
@@ -110,7 +110,7 @@ func TestPostJsonToC7(t *testing.T) {
 	}
 
 	// Test with bad auth
-	jsonBytes2, err := PostJsonToC7(&urlString, &tenant, &goodBytes, &badAuth)
+	jsonBytes2, err := PostJsonToC7(&urlString, &tenant, &goodBytes, &badAuth, 0)
 	if err == nil {
 		t.Error("Error should not be nil with bad auth.")
 		return
@@ -126,7 +126,9 @@ func TestPostJsonToC7(t *testing.T) {
 		return
 	}
 
-	jsonBytes3, err := PostJsonToC7(&urlStringFulfillment, &tenant, &goodBytes, &goodAuth)
+	// Test with good auth and good bytes on already fulfilled order
+
+	jsonBytes3, err := PostJsonToC7(&urlStringFulfillment, &tenant, &goodBytes, &goodAuth, 1)
 	if err == nil {
 		t.Error("Error should not be nil with good auth and good bytes.")
 		return
@@ -148,11 +150,14 @@ func TestPostJsonToC7(t *testing.T) {
 		return
 	}
 
-	_, err = PostJsonToC7(nil, nil, nil, nil)
+	// Test nil params
+	_, err = PostJsonToC7(nil, nil, nil, nil, 0)
 	if err == nil {
 		t.Error("Error should not be nil with nil params.")
 		return
 	}
+
+	// Test deleting fulfillment and posting fulfillment
 
 }
 
@@ -164,7 +169,7 @@ func TestDeleteFromC7(t *testing.T) {
 	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
 
 	// Test 1
-	bytes, err := DeleteFromC7(&urlString, &tenant, &badAuth)
+	bytes, err := DeleteFromC7(&urlString, &tenant, &badAuth, 2)
 	if err == nil {
 		t.Error("Error should not be nil with bad auth.")
 		return
@@ -181,7 +186,7 @@ func TestDeleteFromC7(t *testing.T) {
 	}
 
 	// Test 2
-	bytes2, err := DeleteFromC7(&urlString, &tenant, &goodAuth)
+	bytes2, err := DeleteFromC7(&urlString, &tenant, &goodAuth, 0)
 	if err == nil {
 		t.Error("Error should not be nil with good auth.")
 		return
@@ -197,7 +202,7 @@ func TestDeleteFromC7(t *testing.T) {
 		return
 	}
 
-	_, err = DeleteFromC7(nil, nil, nil)
+	_, err = DeleteFromC7(nil, nil, nil, 0)
 	if err == nil {
 		t.Error("Error should not be nil with nil params.")
 		return
