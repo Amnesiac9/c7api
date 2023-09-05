@@ -45,15 +45,6 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int
 		attempts = 10
 	}
 
-	req, err := http.NewRequest("GET", *urlString, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error creating GET request for C7: %v", err)
-	}
-
-	req.Header.Set("tenant", *tenant)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("Authorization", *auth)
-
 	// Make request to C7
 	client := &http.Client{}
 	response := &http.Response{StatusCode: 0}
@@ -61,16 +52,23 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int
 	var i int
 
 	for i = 0; i < attempts; i++ {
+		req, err := http.NewRequest("GET", *urlString, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
+		}
+
+		req.Header.Set("tenant", *tenant)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Add("Authorization", *auth)
 
 		response, err = client.Do(req)
 		if err != nil {
 			return nil, fmt.Errorf("error making GET request to C7: %v", err)
 		}
 
-		defer response.Body.Close()
-
 		// Read the body into variable
 		body, err = io.ReadAll(response.Body)
+		response.Body.Close()
 		if err != nil {
 			return nil, fmt.Errorf("error reading response body from C7: %v", err)
 		}
@@ -108,16 +106,6 @@ func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *stri
 		attempts = 10
 	}
 
-	req, err := http.NewRequest("POST", *urlString, bytes.NewBuffer(*reqBody))
-	if err != nil {
-		return nil, fmt.Errorf("error creating POST request to C7: %v", err)
-	}
-
-	// Set headers
-	req.Header.Set("tenant", *tenant)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("Authorization", *auth) //AppAuthEncoded
-
 	// Make request to C7
 	client := &http.Client{}
 	response := &http.Response{StatusCode: 0}
@@ -125,15 +113,24 @@ func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *stri
 	var i int
 
 	for i = 0; i < attempts; i++ {
+		// Cannot reuse the same request, need to create a new one each time. (Not sure why, but causes cloudflare issues on C7's end)
+		req, err := http.NewRequest("POST", *urlString, bytes.NewBuffer(*reqBody))
+		if err != nil {
+			return nil, fmt.Errorf("error creating POST request to C7: %v", err)
+		}
+
+		req.Header.Set("tenant", *tenant)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Add("Authorization", *auth) //AppAuthEncoded
+
 		response, err = client.Do(req)
 		if err != nil {
 			return nil, fmt.Errorf("error making POST request to C7: %v", err)
 		}
 
-		defer response.Body.Close()
-
 		// Read the body into variable
 		body, err = io.ReadAll(response.Body)
+		response.Body.Close() // Remove defer when using for loop, close the body each time it is read.
 		if err != nil {
 			return nil, fmt.Errorf("error reading response body from C7: %v", err)
 		}
@@ -141,7 +138,7 @@ func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *stri
 		if response.StatusCode == 200 {
 			return &body, nil
 		} else {
-			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(c7Body))
+			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
 			time.Sleep(SLEEP_TIME)
 		}
 	}
@@ -162,16 +159,6 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int)
 		attempts = 10
 	}
 
-	req, err := http.NewRequest("DELETE", *urlString, nil)
-	if err != nil {
-		return nil, fmt.Errorf("while creating DELETE request to C7, got: %v", err)
-	}
-
-	// Set headers
-	req.Header.Set("tenant", *tenant)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("Authorization", *auth) //AppAuthEncoded
-
 	// Make request to C7
 	client := &http.Client{}
 	response := &http.Response{StatusCode: 0}
@@ -180,15 +167,24 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int)
 
 	for i = 0; i < attempts; i++ {
 
+		req, err := http.NewRequest("DELETE", *urlString, nil)
+		if err != nil {
+			return nil, fmt.Errorf("while creating DELETE request to C7, got: %v", err)
+		}
+
+		// Set headers
+		req.Header.Set("tenant", *tenant)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Add("Authorization", *auth) //AppAuthEncoded
+
 		response, err = client.Do(req)
 		if err != nil {
 			return nil, fmt.Errorf("while making DELETE request to C7, got: %v", err)
 		}
 
-		defer response.Body.Close()
-
 		// Read the body into variable
 		body, err = io.ReadAll(response.Body)
+		response.Body.Close()
 		if err != nil {
 			return nil, fmt.Errorf("while reading response body from C7, got: %v", err)
 		}

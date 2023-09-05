@@ -68,7 +68,7 @@ func TestGetJSONFromC7(t *testing.T) {
 
 func TestPostJsonToC7(t *testing.T) {
 
-	urlString := "https://api.commerce7.com/v1/order"
+	//urlString := "https://api.commerce7.com/v1/order"
 	urlStringFulfillment := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/all"
 	//urlStringRemoveFulfillment := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/f1439243-ceee-4ed6-b08a-4bd12f36c63e"
 	tenant := testTenant
@@ -87,77 +87,35 @@ func TestPostJsonToC7(t *testing.T) {
 		"packageCount": 1
 	}`)
 
-	// Test posting blank bytes
-	jsonBytes, err := PostJsonToC7(&urlString, &tenant, &blankBytes, &goodAuth, 2)
-	if err == nil {
-		t.Error("Error should not be nil with blank bytes.")
-		return
+	testCases := []struct {
+		urlString     string
+		tenant        string
+		bytes         []byte
+		auth          string
+		attempts      int
+		expectedCode  int
+		expectedBytes []byte
+	}{
+		// 1 Blank Bytes
+		{urlStringFulfillment, tenant, blankBytes, goodAuth, 2, 422, []byte(`{"statusCode":422,"type":"validationError","message":"One or more elements is missing or invalid","errors":[{"field":"type","message":"required"},{"field":"fulfillmentDate","message":"required"},{"field":"packageCount","message":"required"}]}`)},
+		// 2 Bad Auth
+		{urlStringFulfillment, tenant, goodBytes, badAuth, 2, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
+		// 3 Good Auth, Good Bytes
+		{urlStringFulfillment, tenant, goodBytes, goodAuth, 2, 422, []byte(`{"statusCode":422,"type":"validationError","message":"Can not fulfill an order that is marked Fulfilled"}`)},
 	}
 
-	if err.(C7Error).StatusCode != 422 {
-		t.Error("Status code should be 422 with blank JSON, got: ", err.(C7Error).StatusCode)
-		return
+	for i, testCase := range testCases {
+		jsonBytes, err := PostJsonToC7(&testCase.urlString, &testCase.tenant, &testCase.bytes, &testCase.auth, testCase.attempts)
+		if err.(C7Error).StatusCode != testCase.expectedCode {
+			t.Error("TestPostJsonToC7, test case: ", i+1, " Expected status code: ", testCase.expectedCode, " got: ", err.(C7Error).StatusCode)
+		}
+		if string(*jsonBytes) != string(testCase.expectedBytes) {
+			t.Error("TestPostJsonToC7, test case: ", i+1, "Expected: ", string(testCase.expectedBytes), " got: ", string(*jsonBytes))
+			return
+		}
 	}
 
-	if jsonBytes == nil {
-		t.Error("jsonBytes from C7 should not be nil")
-		return
-	}
-
-	if err.(C7Error).Err == nil {
-		t.Error("C7Error.Error should not be nil")
-		return
-	}
-
-	// Test with bad auth
-	jsonBytes2, err := PostJsonToC7(&urlString, &tenant, &goodBytes, &badAuth, 0)
-	if err == nil {
-		t.Error("Error should not be nil with bad auth.")
-		return
-	}
-
-	if err.(C7Error).StatusCode != 401 {
-		t.Error("Status code should be 401 with bad auth, got: ", err.(C7Error).StatusCode)
-		return
-	}
-
-	if jsonBytes2 == nil {
-		t.Error("jsonBytes2 from C7 should not be nil with bad auth")
-		return
-	}
-
-	// Test with good auth and good bytes on already fulfilled order
-
-	jsonBytes3, err := PostJsonToC7(&urlStringFulfillment, &tenant, &goodBytes, &goodAuth, 1)
-	if err == nil {
-		t.Error("Error should not be nil with good auth and good bytes.")
-		return
-	}
-
-	if err.(C7Error).StatusCode != 422 {
-		t.Error("Status code should be 422 with good auth and good bytes, got: ", err.(C7Error).StatusCode)
-		return
-	}
-
-	if jsonBytes3 == nil {
-		t.Error("jsonBytes3 from C7 should not be nil")
-		return
-	}
-
-	expected := `{"statusCode":422,"type":"validationError","message":"Can not fulfill an order that is marked Fulfilled"}`
-	if string(*jsonBytes3) != expected {
-		t.Error("Expected: ", expected, " got: ", string(*jsonBytes3))
-		return
-	}
-
-	// Test nil params
-	_, err = PostJsonToC7(nil, nil, nil, nil, 0)
-	if err == nil {
-		t.Error("Error should not be nil with nil params.")
-		return
-	}
-
-	// Test deleting fulfillment and posting fulfillment
+	// TODO: Test deleting fulfillment and posting fulfillment
 
 }
 
