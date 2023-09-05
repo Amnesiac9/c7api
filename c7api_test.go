@@ -25,7 +25,7 @@ func TestGetJSONFromC7(t *testing.T) {
 	goodAuth := AppAuthEncoded
 	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
 
-	jsonBytes, err := GetJsonFromC7(&urlString, &tenant, &goodAuth)
+	jsonBytes, err := GetJsonFromC7(&urlString, &tenant, &goodAuth, 0)
 	if err != nil {
 		t.Error("Error getting JSON from C7: ", err.Error())
 		return
@@ -36,7 +36,7 @@ func TestGetJSONFromC7(t *testing.T) {
 		return
 	}
 
-	jsonBytes, err = GetJsonFromC7(&urlString, &tenant, &badAuth)
+	jsonBytes, err = GetJsonFromC7(&urlString, &tenant, &badAuth, 3)
 	if err == nil {
 		t.Error("Error, did not get err with bad auth: ", err.Error())
 		return
@@ -58,7 +58,7 @@ func TestGetJSONFromC7(t *testing.T) {
 		return
 	}
 
-	_, err = GetJsonFromC7(nil, nil, nil)
+	_, err = GetJsonFromC7(nil, nil, nil, 0)
 	if err == nil {
 		t.Error("Error should not be nil with nil params.")
 		return
@@ -87,6 +87,7 @@ func TestPostJsonToC7(t *testing.T) {
 		"packageCount": 1
 	}`)
 
+	// Test posting blank bytes
 	jsonBytes, err := PostJsonToC7(&urlString, &tenant, &blankBytes, &goodAuth)
 	if err == nil {
 		t.Error("Error should not be nil with blank bytes.")
@@ -130,13 +131,6 @@ func TestPostJsonToC7(t *testing.T) {
 		t.Error("Error should not be nil with good auth and good bytes.")
 		return
 	}
-	// if err != nil {
-	// 	t.Error("Got error with good auth and good bytes: ", err.Error())
-	// 	if jsonBytes3 != nil {
-	// 		fmt.Println(string(*jsonBytes3))
-	// 	}
-	// 	return
-	// }
 
 	if err.(C7Error).StatusCode != 422 {
 		t.Error("Status code should be 422 with good auth and good bytes, got: ", err.(C7Error).StatusCode)
