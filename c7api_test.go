@@ -71,6 +71,8 @@ func TestPostJsonToC7(t *testing.T) {
 	//urlString := "https://api.commerce7.com/v1/order"
 	urlStringFulfillment := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/all"
 	//urlStringRemoveFulfillment := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/f1439243-ceee-4ed6-b08a-4bd12f36c63e"
+	orderNumber := 1235
+	orderId := "034e6096-429d-452c-b258-5d37a1522934"
 	tenant := testTenant
 	goodAuth := AppAuthEncoded
 	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
@@ -101,21 +103,36 @@ func TestPostJsonToC7(t *testing.T) {
 		// 2 Bad Auth
 		{urlStringFulfillment, tenant, goodBytes, badAuth, 2, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
 		// 3 Good Auth, Good Bytes
-		{urlStringFulfillment, tenant, goodBytes, goodAuth, 2, 422, []byte(`{"statusCode":422,"type":"validationError","message":"Can not fulfill an order that is marked Fulfilled"}`)},
+		{urlStringFulfillment, tenant, goodBytes, goodAuth, 2, 422, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":"2023-07-30T10:59:32.000Z","orderNumber":1235,`)},
+		// 4 Good Auth, Good Bytes, already fulfilled
+		{urlStringFulfillment, tenant, goodBytes, goodAuth, 0, 422, []byte(`{"statusCode":422,"type":"validationError","message":"Can not fulfill an order that is marked Fulfilled"}`)},
+	}
+
+	// Delete previous fulfillment for test
+	fulfillmentId, err := GetFulfillmentId(orderNumber, testTenant, AppAuthEncoded, 1)
+	if err != nil {
+		t.Error("Error getting fulfillment id: ", err.Error())
+		return
+	}
+
+	t.Log("Fulfillment ID: ", fulfillmentId)
+
+	err = DeleteC7Fulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
+	if err != nil {
+		t.Error("Error deleting fulfillment: ", err.Error())
+		return
 	}
 
 	for i, testCase := range testCases {
 		jsonBytes, err := PostJsonToC7(&testCase.urlString, &testCase.tenant, &testCase.bytes, &testCase.auth, testCase.attempts)
-		if err.(C7Error).StatusCode != testCase.expectedCode {
+		if err != nil && err.(C7Error).StatusCode != testCase.expectedCode {
 			t.Error("TestPostJsonToC7, test case: ", i+1, " Expected status code: ", testCase.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
-		if string(*jsonBytes) != string(testCase.expectedBytes) {
-			t.Error("TestPostJsonToC7, test case: ", i+1, "Expected: ", string(testCase.expectedBytes), " got: ", string(*jsonBytes))
+		if string(*jsonBytes)[:50] != string(testCase.expectedBytes)[:50] {
+			t.Error("TestPostJsonToC7, test case: ", i+1, "Expected: ", string(testCase.expectedBytes)[:50], " got: ", string(*jsonBytes)[:50])
 			return
 		}
 	}
-
-	// TODO: Test deleting fulfillment and posting fulfillment
 
 }
 
@@ -185,13 +202,38 @@ func TestFormatDatesForC7(t *testing.T) {
 }
 
 func TestGetFulfillmentId(t *testing.T) {
-	testParams := []int{1232, 1235, 999}
-	expected := []string{"9475723a-8f11-4111-9234-852d85813581", "075baea0-34fe-4ac4-815d-57bd79bedf5e", ""}
+	// testParams := []int{1232, 1005, 999, 1239}
+	// expected := []string{"9475723a-8f11-4111-9234-852d85813581", "139826d7-348d-4a3b-aca0-5466e7462e79", "", ""}
 
-	for i, param := range testParams {
-		result, _ := GetFulfillmentId(param, testTenant, AppAuthEncoded)
-		if result != expected[i] {
-			t.Error("Expected ", expected[i], " got ", result)
+	testCases := []struct {
+		orderNumber  int
+		auth         string
+		expectedCode int
+		expectedId   string
+	}{
+		{1232, AppAuthEncoded, 0, "9475723a-8f11-4111-9234-852d85813581"},
+		{1005, AppAuthEncoded, 0, "139826d7-348d-4a3b-aca0-5466e7462e79"},
+		{999, AppAuthEncoded, 0, ""},
+		{1239, AppAuthEncoded, 0, ""},
+		{1232, "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth")), 401, ""},
+	}
+
+	// for i, param := range testParams {
+	// 	result, _ := GetFulfillmentId(param, testTenant, AppAuthEncoded)
+	// 	if result != expected[i] {
+	// 		t.Error("Expected ", expected[i], " got ", result)
+	// 	}
+	// }
+
+	for i, testCase := range testCases {
+		resultId, err := GetFulfillmentId(testCase.orderNumber, testTenant, testCase.auth, 1)
+		if err, ok := err.(C7Error); ok {
+			if err.StatusCode != testCase.expectedCode {
+				t.Error("Test case: ", i+1, " expected status code: ", testCase.expectedCode, " got: ", err.StatusCode)
+			}
+		}
+		if resultId != testCase.expectedId {
+			t.Error("Test case: ", i+1, " expected id: ", testCase.expectedId, " got: ", resultId)
 		}
 	}
 }

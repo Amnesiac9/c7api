@@ -217,11 +217,11 @@ func FormatDatesForC7(date string) (string, error) {
 	return dateFormatted.Format("2006-01-02T15:04:05.000Z"), err
 }
 
-func GetFulfillmentId(OrderNumber int, tenant string, auth string) (string, error) {
+func GetFulfillmentId(OrderNumber int, tenant string, auth string, attempts int) (string, error) {
 
 	orderUrl := "https://api.commerce7.com/v1/order?q=" + strconv.Itoa(OrderNumber)
 	// Get the order from C7
-	ordersBytes, err := GetJsonFromC7(&orderUrl, &tenant, &auth, 1)
+	ordersBytes, err := GetJsonFromC7(&orderUrl, &tenant, &auth, attempts)
 	if err != nil {
 		return "", err
 	}
