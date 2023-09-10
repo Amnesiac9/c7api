@@ -73,7 +73,7 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int
 			return nil, fmt.Errorf("error reading response body from C7: %v", err)
 		}
 
-		if response.StatusCode == 200 {
+		if response.StatusCode == 200 || response.StatusCode == 201 {
 			return &body, nil
 		} else {
 			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
@@ -135,7 +135,7 @@ func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *stri
 			return nil, fmt.Errorf("error reading response body from C7: %v", err)
 		}
 
-		if response.StatusCode == 200 {
+		if response.StatusCode == 200 || response.StatusCode == 201 {
 			return &body, nil
 		} else {
 			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
@@ -189,7 +189,7 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int)
 			return nil, fmt.Errorf("while reading response body from C7, got: %v", err)
 		}
 
-		if response.StatusCode == 200 { // C7 docs are lying, they return 200 on success along with the full order object.
+		if response.StatusCode == 200 || response.StatusCode == 201 { // C7 docs are lying, they return 200 on success along with the full order object.
 			return &body, nil
 		} else {
 			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
