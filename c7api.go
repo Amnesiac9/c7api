@@ -197,7 +197,7 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int)
 		}
 	}
 
-	// Response is not 200, return error
+	// Response is not 200 or 201, return error
 	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
 
 }
