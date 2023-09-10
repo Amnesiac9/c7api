@@ -23,8 +23,6 @@ import (
 // 	r.attempts = 0
 // }
 
-//
-
 // var attemptCount attemptCounter
 
 // Errors will return a custom error type called C7Error if there is an error directly from C7, calling err.Error() on this will return the error message from C7 and the status code.
