@@ -192,7 +192,7 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int)
 		if response.StatusCode == 200 || response.StatusCode == 201 { // C7 docs are lying, they return 200 on success along with the full order object.
 			return &body, nil
 		} else {
-			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
+			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body)) // Debugging
 			time.Sleep(SLEEP_TIME)
 		}
 	}
