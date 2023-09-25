@@ -146,6 +146,59 @@ func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *stri
 	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
 }
 
+func PutJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *string, attempts int) (*[]byte, error) {
+	if urlString == nil || tenant == nil || reqBody == nil || auth == nil {
+		return nil, fmt.Errorf("error posting JSON to C7: nil value in arguments")
+	}
+
+	const SLEEP_TIME = 500 * time.Millisecond
+
+	if attempts < 1 {
+		attempts = 1
+	} else if attempts > 10 {
+		attempts = 10
+	}
+
+	// Make request to C7
+	client := &http.Client{}
+	response := &http.Response{StatusCode: 0}
+	body := []byte{}
+	var i int
+
+	for i = 0; i < attempts; i++ {
+		// Cannot reuse the same request, need to create a new one each time. (Not sure why, but causes cloudflare issues on C7's end)
+		req, err := http.NewRequest("PUT", *urlString, bytes.NewBuffer(*reqBody))
+		if err != nil {
+			return nil, fmt.Errorf("error creating PUT request to C7: %v", err)
+		}
+
+		req.Header.Set("tenant", *tenant)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Add("Authorization", *auth) //AppAuthEncoded
+
+		response, err = client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("error making PUT request to C7: %v", err)
+		}
+
+		// Read the body into variable
+		body, err = io.ReadAll(response.Body)
+		response.Body.Close() // Remove defer when using for loop, close the body each time it is read.
+		if err != nil {
+			return nil, fmt.Errorf("error reading response body from C7: %v", err)
+		}
+
+		if response.StatusCode == 200 || response.StatusCode == 201 {
+			return &body, nil
+		} else {
+			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
+			time.Sleep(SLEEP_TIME)
+		}
+	}
+
+	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
+}
+
 func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int) (*[]byte, error) {
 	if urlString == nil || tenant == nil || auth == nil {
 		return nil, fmt.Errorf("nil value in arguments")
