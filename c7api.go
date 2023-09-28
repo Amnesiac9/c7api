@@ -76,10 +76,13 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int
 		if response.StatusCode == 200 || response.StatusCode == 201 {
 			return &body, nil
 		} else {
-			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
-			time.Sleep(SLEEP_TIME)
+			if response.StatusCode == http.StatusTooManyRequests {
+				exponSleepTime := SLEEP_TIME * time.Duration(i)
+				time.Sleep(exponSleepTime)
+			} else {
+				time.Sleep(SLEEP_TIME)
+			}
 		}
-
 	}
 
 	// Response is not 200, return error
@@ -138,8 +141,12 @@ func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *stri
 		if response.StatusCode == 200 || response.StatusCode == 201 {
 			return &body, nil
 		} else {
-			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
-			time.Sleep(SLEEP_TIME)
+			if response.StatusCode == http.StatusTooManyRequests {
+				exponSleepTime := SLEEP_TIME * time.Duration(i)
+				time.Sleep(exponSleepTime)
+			} else {
+				time.Sleep(SLEEP_TIME)
+			}
 		}
 	}
 
@@ -192,7 +199,12 @@ func PutJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *strin
 			return &body, nil
 		} else {
 			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
-			time.Sleep(SLEEP_TIME)
+			if response.StatusCode == http.StatusTooManyRequests {
+				exponSleepTime := SLEEP_TIME * time.Duration(i)
+				time.Sleep(exponSleepTime)
+			} else {
+				time.Sleep(SLEEP_TIME)
+			}
 		}
 	}
 
@@ -245,8 +257,12 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int)
 		if response.StatusCode == 200 || response.StatusCode == 201 { // C7 docs are lying, they return 200 on success along with the full order object.
 			return &body, nil
 		} else {
-			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body)) // Debugging
-			time.Sleep(SLEEP_TIME)
+			if response.StatusCode == http.StatusTooManyRequests {
+				exponSleepTime := SLEEP_TIME * time.Duration(i)
+				time.Sleep(exponSleepTime)
+			} else {
+				time.Sleep(SLEEP_TIME)
+			}
 		}
 	}
 
