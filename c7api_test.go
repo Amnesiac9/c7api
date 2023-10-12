@@ -237,3 +237,25 @@ func TestGetFulfillmentId(t *testing.T) {
 		}
 	}
 }
+
+func Test_IsCarrierSupported(t *testing.T) {
+	testCases := []struct {
+		carrier  string
+		expected bool
+	}{
+		{"UPS", true},
+		{"FedEx", true},
+		{"GSO", true},
+		{"USPS", false},
+		{"Canada Post", false},
+		{"DHL", false},
+		{"", false},
+	}
+
+	for i, testCase := range testCases {
+		result := IsCarrierSupported(testCase.carrier)
+		if result != testCase.expected {
+			t.Error("Test case: ", i+1, " expected: ", testCase.expected, " got: ", result)
+		}
+	}
+}

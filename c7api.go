@@ -328,3 +328,16 @@ func DeleteC7Fulfillment(orderId string, fulfillmentId string, tenant string, au
 	return nil
 
 }
+
+func IsCarrierSupported(carrier string) bool {
+	switch carrier {
+	case "UPS":
+		return true
+	case "FedEx":
+		return true
+	case "GSO":
+		return true
+	default:
+		return false
+	}
+}
