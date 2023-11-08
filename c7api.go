@@ -337,6 +337,10 @@ func IsCarrierSupported(carrier string) bool {
 		return true
 	case "GSO":
 		return true
+	case "ATS Healthcare":
+		return true
+	case "Australia Post":
+		return true
 	default:
 		return false
 	}
