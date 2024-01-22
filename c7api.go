@@ -11,19 +11,66 @@ import (
 	"time"
 )
 
-// type attemptCounter struct {
-// 	attempts int
-// }
+const SLEEP_TIME = 500 * time.Millisecond
 
-// func (r *attemptCounter) add1() {
-// 	r.attempts++
-// }
+// Basic requests to C7 endpoint wrapped in retry logic with exponential backoff
+func NewRequest(method string, url *string, tenant *string, c7AppAuthEncoded *string, retryCount int) (*[]byte, error) {
+	//TODO: Switch based on method
+	if url == nil || tenant == nil || c7AppAuthEncoded == nil {
+		return nil, fmt.Errorf("error getting JSON from C7: nil value in arguments")
+	}
 
-// func (r *attemptCounter) reset() {
-// 	r.attempts = 0
-// }
+	if retryCount < 0 {
+		retryCount = 0
+	} else if retryCount > 10 {
+		retryCount = 10
+	}
 
-// var attemptCount attemptCounter
+	// Make request to C7
+	client := &http.Client{}
+	response := &http.Response{StatusCode: 0}
+	body := []byte{}
+
+	for i := 0; i <= retryCount; i++ {
+		req, err := http.NewRequest("GET", *url, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
+		}
+
+		req.Header.Set("tenant", *tenant)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Add("Authorization", *c7AppAuthEncoded)
+
+		response, err = client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("error making GET request to C7: %v", err)
+		}
+
+		// Read the body
+		body, err = io.ReadAll(response.Body)
+		response.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("error reading response body from C7: %v", err)
+		}
+
+		// 200-299 is success, return body and nil error
+		if response.StatusCode <= 200 && response.StatusCode >= 299 {
+			return &body, nil
+		} else {
+			// Exponential backoff based on retry count
+			if response.StatusCode == http.StatusTooManyRequests {
+				exponSleepTime := SLEEP_TIME * time.Duration(i)
+				time.Sleep(exponSleepTime)
+			} else {
+				time.Sleep(SLEEP_TIME)
+			}
+		}
+	}
+
+	// Response is not 200, return error
+	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
+
+}
 
 // Errors will return a custom error type called C7Error if there is an error directly from C7, calling err.Error() on this will return the error message from C7 and the status code.
 
@@ -36,8 +83,6 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int
 	if urlString == nil || tenant == nil || auth == nil {
 		return nil, fmt.Errorf("error getting JSON from C7: nil value in arguments")
 	}
-
-	const SLEEP_TIME = 500 * time.Millisecond
 
 	if attempts < 1 {
 		attempts = 1
@@ -101,8 +146,6 @@ func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *stri
 		return nil, fmt.Errorf("error posting JSON to C7: nil value in arguments")
 	}
 
-	const SLEEP_TIME = 500 * time.Millisecond
-
 	if attempts < 1 {
 		attempts = 1
 	} else if attempts > 10 {
@@ -157,8 +200,6 @@ func PutJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *strin
 	if urlString == nil || tenant == nil || reqBody == nil || auth == nil {
 		return nil, fmt.Errorf("error posting JSON to C7: nil value in arguments")
 	}
-
-	const SLEEP_TIME = 500 * time.Millisecond
 
 	if attempts < 1 {
 		attempts = 1
@@ -215,8 +256,6 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int)
 	if urlString == nil || tenant == nil || auth == nil {
 		return nil, fmt.Errorf("nil value in arguments")
 	}
-
-	const SLEEP_TIME = 500 * time.Millisecond
 
 	if attempts < 1 {
 		attempts = 1
