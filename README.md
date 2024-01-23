@@ -1,6 +1,6 @@
 # c7api
 
-![Tests](https://github.com/Amnesiac9/c7api/workflows/go/badge.svg?branch=main)
+![Tests](https://github.com/Amnesiac9/c7api/actions/workflows/go/badge.svg?branch=main)
 
 
 Simple GO Package for working with the [Commerce 7](https://commerce7.com/) API.
