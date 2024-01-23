@@ -193,7 +193,7 @@ func TestDeleteC7_New(t *testing.T) {
 		expectedCode  int
 		expectedBytes []byte
 	}{
-		{"Good DELETE", "DELETE", urlStringDelete, goodBytes, tenant, goodAuth, 0, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":null,"orderNumber":1235,`)},
+		{"Good DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":null,"orderNumber":1235,`)},
 		{"Bad Auth DELETE", "DELETE", urlStringDelete, nil, tenant, badAuth, 0, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
 		{"No Fulfillment to DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, 422, []byte(`{"statusCode":422,"type":"processingError","message":"Fulfillment not found"}`)},
 	}
