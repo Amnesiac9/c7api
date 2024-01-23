@@ -1,6 +1,6 @@
 # c7api
 
-![Tests](https://github.com/Amnesiac9/c7api/actions/workflows/Go/badge.svg?branch=main)
+![Tests](https://github.com/Amnesiac9/c7api/actions/workflows/Go.yml/badge.svg?branch=main)
 <!-- ![Tests](https://github.com/Amnesiac9/c7api/actions/workflows/Test/badge.svg?branch=main) -->
 
 
