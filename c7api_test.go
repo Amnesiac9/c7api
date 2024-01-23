@@ -18,6 +18,98 @@ var (
 	testTenant = os.Getenv("testTenant")
 )
 
+func TestGetJSONFromC7_New(t *testing.T) {
+
+	urlString := "https://api.commerce7.com/v1/order?orderPaidDate=btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z"
+	tenant := testTenant
+	goodAuth := AppAuthEncoded
+	//badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
+
+	type testCase struct {
+		name          string
+		method        string
+		url           string
+		body          []byte
+		tenant        string
+		auth          string
+		attempts      int
+		expectedCode  int
+		expectedBytes []byte
+	}
+
+	testCases := []testCase{
+		{
+			name:          "Good GET",
+			method:        "GET",
+			url:           urlString,
+			body:          nil,
+			tenant:        tenant,
+			auth:          goodAuth,
+			attempts:      0,
+			expectedCode:  200,
+			expectedBytes: nil, // TODO: add expected bytes
+		},
+		{
+			name:          "Bad Auth GET",
+			method:        "GET",
+			url:           urlString,
+			body:          nil,
+			tenant:        tenant,
+			auth:          "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth")),
+			attempts:      0,
+			expectedCode:  401,
+			expectedBytes: nil,
+		},
+	}
+
+	for _, tc := range testCases {
+
+		t.Log("Test", tc.name)
+
+		jsonBytes, err := NewRequest(tc.method, &tc.url, &tc.body, &tc.tenant, &tc.auth, tc.attempts)
+		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
+		}
+
+		if tc.expectedBytes != nil && string(*jsonBytes) != string(tc.expectedBytes) {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, "Expected: ", string(tc.expectedBytes), " got: ", string(*jsonBytes))
+			return
+		}
+
+	}
+
+	// jsonBytes, err = GetJsonFromC7(&urlString, &tenant, &badAuth, 3)
+	// if err == nil {
+	// 	t.Error("Error, did not get err with bad auth: ", err.Error())
+	// 	return
+	// }
+	// fmt.Println(err.Error())
+
+	// if err.Error() != `status code: 401, error: {"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}` {
+	// 	t.Error("Error, expected: ", `Status Code: 401, C7 Error: {"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`, " got: ", err.Error())
+	// 	return
+	// }
+
+	// if err.(C7Error).StatusCode != 401 {
+	// 	t.Error("Error, expected status code 401, got: ", err.(C7Error).StatusCode)
+	// 	return
+	// }
+
+	// if jsonBytes == nil {
+	// 	t.Error("JSON Bytes should not be nil with bad auth")
+	// 	return
+	// }
+
+	// _, err = GetJsonFromC7(nil, nil, nil, 0)
+	// if err == nil {
+	// 	t.Error("Error should not be nil with nil params.")
+	// 	return
+	// }
+
+}
+
+/// OLD TESTS ///
+
 func TestGetJSONFromC7(t *testing.T) {
 
 	urlString := "https://api.commerce7.com/v1/order?orderPaidDate=btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z"

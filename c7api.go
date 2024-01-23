@@ -14,10 +14,15 @@ import (
 const SLEEP_TIME = 500 * time.Millisecond
 
 // Basic requests to C7 endpoint wrapped in retry logic with exponential backoff
-func NewRequest(method string, url *string, tenant *string, c7AppAuthEncoded *string, retryCount int) (*[]byte, error) {
+func NewRequest(method string, url *string, reqBody *[]byte, tenant *string, c7AppAuthEncoded *string, retryCount int) (*[]byte, error) {
 	//TODO: Switch based on method
 	if url == nil || tenant == nil || c7AppAuthEncoded == nil {
 		return nil, fmt.Errorf("error getting JSON from C7: nil value in arguments")
+	}
+
+	if reqBody == nil {
+		fmt.Println("reqBody is nil")
+		reqBody = &[]byte{}
 	}
 
 	if retryCount < 0 {
@@ -26,13 +31,12 @@ func NewRequest(method string, url *string, tenant *string, c7AppAuthEncoded *st
 		retryCount = 10
 	}
 
-	// Make request to C7
 	client := &http.Client{}
 	response := &http.Response{StatusCode: 0}
 	body := []byte{}
 
 	for i := 0; i <= retryCount; i++ {
-		req, err := http.NewRequest("GET", *url, nil)
+		req, err := http.NewRequest(method, *url, bytes.NewBuffer(*reqBody))
 		if err != nil {
 			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
 		}
@@ -46,7 +50,6 @@ func NewRequest(method string, url *string, tenant *string, c7AppAuthEncoded *st
 			return nil, fmt.Errorf("error making GET request to C7: %v", err)
 		}
 
-		// Read the body
 		body, err = io.ReadAll(response.Body)
 		response.Body.Close()
 		if err != nil {
@@ -54,7 +57,7 @@ func NewRequest(method string, url *string, tenant *string, c7AppAuthEncoded *st
 		}
 
 		// 200-299 is success, return body and nil error
-		if response.StatusCode <= 200 && response.StatusCode >= 299 {
+		if response.StatusCode >= 200 && response.StatusCode <= 299 {
 			return &body, nil
 		} else {
 			// Exponential backoff based on retry count
@@ -67,7 +70,6 @@ func NewRequest(method string, url *string, tenant *string, c7AppAuthEncoded *st
 		}
 	}
 
-	// Response is not 200, return error
 	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
 
 }
