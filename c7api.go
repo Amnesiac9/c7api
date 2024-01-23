@@ -15,7 +15,7 @@ const SLEEP_TIME = 500 * time.Millisecond
 
 // Basic requests to C7 endpoint wrapped in retry logic with exponential backoff
 func NewRequest(method string, url *string, reqBody *[]byte, tenant *string, c7AppAuthEncoded *string, retryCount int) (*[]byte, error) {
-	//TODO: Switch based on method
+	//
 	if url == nil || tenant == nil || c7AppAuthEncoded == nil {
 		return nil, fmt.Errorf("error getting JSON from C7: nil value in arguments")
 	}

@@ -18,9 +18,9 @@ var (
 	testTenant = os.Getenv("testTenant")
 )
 
-func TestGetJSONFromC7_New(t *testing.T) {
+func TestGetC7_New(t *testing.T) {
 
-	urlString := "https://api.commerce7.com/v1/order?orderPaidDate=btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z"
+	urlStringOrders := "https://api.commerce7.com/v1/order?orderPaidDate=btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z"
 	tenant := testTenant
 	goodAuth := AppAuthEncoded
 	//badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
@@ -41,7 +41,7 @@ func TestGetJSONFromC7_New(t *testing.T) {
 		{
 			name:          "Good GET",
 			method:        "GET",
-			url:           urlString,
+			url:           urlStringOrders,
 			body:          nil,
 			tenant:        tenant,
 			auth:          goodAuth,
@@ -52,7 +52,7 @@ func TestGetJSONFromC7_New(t *testing.T) {
 		{
 			name:          "Bad Auth GET",
 			method:        "GET",
-			url:           urlString,
+			url:           urlStringOrders,
 			body:          nil,
 			tenant:        tenant,
 			auth:          "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth")),
@@ -78,33 +78,150 @@ func TestGetJSONFromC7_New(t *testing.T) {
 
 	}
 
-	// jsonBytes, err = GetJsonFromC7(&urlString, &tenant, &badAuth, 3)
-	// if err == nil {
-	// 	t.Error("Error, did not get err with bad auth: ", err.Error())
-	// 	return
-	// }
-	// fmt.Println(err.Error())
+}
 
-	// if err.Error() != `status code: 401, error: {"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}` {
-	// 	t.Error("Error, expected: ", `Status Code: 401, C7 Error: {"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`, " got: ", err.Error())
-	// 	return
-	// }
+func TestPostC7_New(t *testing.T) {
 
-	// if err.(C7Error).StatusCode != 401 {
-	// 	t.Error("Error, expected status code 401, got: ", err.(C7Error).StatusCode)
-	// 	return
-	// }
+	urlStringFulfillment := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/all"
+	orderNumber := 1235
+	orderId := "034e6096-429d-452c-b258-5d37a1522934"
+	tenant := testTenant
+	goodAuth := AppAuthEncoded
+	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
 
-	// if jsonBytes == nil {
-	// 	t.Error("JSON Bytes should not be nil with bad auth")
-	// 	return
-	// }
+	blankBytes := []byte("")
+	goodBytes := []byte(`{
+		"sendTransactionEmail": false,
+		"type": "Shipped",
+		"fulfillmentDate": "2023-07-30T10:59:32.000Z",
+		"shipped": {
+			"trackingNumbers": ["1Z525R5EA803600000"],
+			"carrier": "UPS"
+		},
+		"packageCount": 1
+	}`)
 
-	// _, err = GetJsonFromC7(nil, nil, nil, 0)
-	// if err == nil {
-	// 	t.Error("Error should not be nil with nil params.")
-	// 	return
-	// }
+	testCases := []struct {
+		name          string
+		method        string
+		url           string
+		body          []byte
+		tenant        string
+		auth          string
+		attempts      int
+		expectedCode  int
+		expectedBytes []byte
+	}{
+		{"Good Post", "POST", urlStringFulfillment, goodBytes, tenant, goodAuth, 0, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":"2023-07-30T10:59:32.000Z","orderNumber":1235,`)},
+		{"Bad Auth POST", "POST", urlStringFulfillment, nil, tenant, badAuth, 0, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
+		{"Already Fulfileld POST", "POST", urlStringFulfillment, goodBytes, tenant, goodAuth, 0, 422, []byte(`{"statusCode":422,"type":"validationError","message":"Can not fulfill an order that is marked Fulfilled"}`)},
+		{"Blank POST", "POST", urlStringFulfillment, blankBytes, tenant, goodAuth, 0, 422, []byte(`{"statusCode":422,"type":"validationError","message":"One or more elements is missing or invalid","errors":[{"field":"type","message":"required"},{"field":"fulfillmentDate","message":"required"},{"field":"packageCount","message":"required"}]}`)},
+	}
+
+	// Delete previous fulfillment for test
+	fulfillmentId, err := GetFulfillmentId(orderNumber, testTenant, AppAuthEncoded, 1)
+	if err != nil {
+		t.Error("Error getting fulfillment id: ", err.Error())
+		return
+	}
+
+	t.Log("Deleting Fulfillment ID: ", fulfillmentId)
+
+	err = DeleteC7Fulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
+	if err != nil {
+		t.Error("Error deleting fulfillment: ", err.Error())
+		return
+	}
+
+	for _, tc := range testCases {
+
+		t.Log("Test", tc.name)
+
+		jsonBytes, err := NewRequest(tc.method, &tc.url, &tc.body, &tc.tenant, &tc.auth, tc.attempts)
+		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
+		}
+
+		if tc.expectedBytes != nil && string(*jsonBytes)[:50] != string(tc.expectedBytes)[:50] {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, "Expected: ", string(tc.expectedBytes)[:50], " got: ", string(*jsonBytes)[:50])
+			return
+		}
+
+	}
+
+}
+
+func TestDeleteC7_New(t *testing.T) {
+
+	//urlStringDelete := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/{fulfillmentId}"
+	urlStringFulfillment := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/all"
+	tenant := testTenant
+	goodAuth := AppAuthEncoded
+	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
+	orderNumber := 1235
+
+	//blankBytes := []byte("")
+	goodBytes := []byte(`{
+		"sendTransactionEmail": false,
+		"type": "Shipped",
+		"fulfillmentDate": "2023-07-30T10:59:32.000Z",
+		"shipped": {
+			"trackingNumbers": ["1Z525R5EA803600000"],
+			"carrier": "UPS"
+		},
+		"packageCount": 1
+	}`)
+
+	fulfillmentId, err := GetFulfillmentId(orderNumber, testTenant, AppAuthEncoded, 1)
+	if err != nil {
+		t.Error("Error getting fulfillment id: ", err.Error())
+		return
+	}
+
+	t.Log("Deleting Fulfillment ID: ", fulfillmentId)
+
+	urlStringDelete := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/" + fulfillmentId
+
+	testCases := []struct {
+		name          string
+		method        string
+		url           string
+		body          []byte
+		tenant        string
+		auth          string
+		attempts      int
+		expectedCode  int
+		expectedBytes []byte
+	}{
+		{"Good DELETE", "DELETE", urlStringDelete, goodBytes, tenant, goodAuth, 0, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":null,"orderNumber":1235,`)},
+		{"Bad Auth DELETE", "DELETE", urlStringDelete, nil, tenant, badAuth, 0, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
+		{"No Fulfillment to DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, 422, []byte(`{"statusCode":422,"type":"processingError","message":"Fulfillment not found"}`)},
+	}
+
+	for _, tc := range testCases {
+
+		t.Log("Test", tc.name)
+
+		jsonBytes, err := NewRequest(tc.method, &tc.url, &tc.body, &tc.tenant, &tc.auth, tc.attempts)
+		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
+		}
+
+		if tc.expectedBytes != nil && string(*jsonBytes)[:50] != string(tc.expectedBytes)[:50] {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, "Expected: ", string(tc.expectedBytes)[:50], " got: ", string(*jsonBytes)[:50])
+			break
+		}
+
+	}
+
+	t.Log("Adding Fulfillment for test TestDeleteC7_New")
+
+	// Post previous fulfillment for test
+	jsonBytes, err := NewRequest("POST", &urlStringFulfillment, &goodBytes, &tenant, &goodAuth, 1)
+	if err != nil || jsonBytes == nil {
+		t.Error("Error posting fulfillment: ", err.Error())
+		return
+	}
 
 }
 
@@ -195,7 +312,7 @@ func TestPostJsonToC7(t *testing.T) {
 		// 2 Bad Auth
 		{urlStringFulfillment, tenant, goodBytes, badAuth, 2, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
 		// 3 Good Auth, Good Bytes
-		{urlStringFulfillment, tenant, goodBytes, goodAuth, 2, 422, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":"2023-07-30T10:59:32.000Z","orderNumber":1235,`)},
+		{urlStringFulfillment, tenant, goodBytes, goodAuth, 2, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":"2023-07-30T10:59:32.000Z","orderNumber":1235,`)},
 		// 4 Good Auth, Good Bytes, already fulfilled
 		{urlStringFulfillment, tenant, goodBytes, goodAuth, 0, 422, []byte(`{"statusCode":422,"type":"validationError","message":"Can not fulfill an order that is marked Fulfilled"}`)},
 	}
@@ -338,6 +455,8 @@ func Test_IsCarrierSupported(t *testing.T) {
 		{"UPS", true},
 		{"FedEx", true},
 		{"GSO", true},
+		{"ATS Healthcare", true},
+		{"Australia Post", true},
 		{"USPS", false},
 		{"Canada Post", false},
 		{"DHL", false},
