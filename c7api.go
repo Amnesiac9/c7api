@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -371,16 +372,16 @@ func DeleteC7Fulfillment(orderId string, fulfillmentId string, tenant string, au
 }
 
 func IsCarrierSupported(carrier string) bool {
-	switch carrier {
+	switch strings.ToUpper(carrier) {
 	case "UPS":
 		return true
-	case "FedEx":
+	case "FEDEX":
 		return true
 	case "GSO":
 		return true
-	case "ATS Healthcare":
+	case "ATS HEALTHCARE":
 		return true
-	case "Australia Post":
+	case "AUSTRALIA POST":
 		return true
 	default:
 		return false
