@@ -121,9 +121,11 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int
 			return nil, fmt.Errorf("error reading response body from C7: %v", err)
 		}
 
-		if response.StatusCode == 200 || response.StatusCode == 201 {
+		// 200-299 is success, return body and nil error
+		if response.StatusCode >= 200 && response.StatusCode <= 299 {
 			return &body, nil
 		} else {
+			// Exponential backoff based on retry count
 			if response.StatusCode == http.StatusTooManyRequests {
 				exponSleepTime := SLEEP_TIME * time.Duration(i)
 				time.Sleep(exponSleepTime)
@@ -184,9 +186,11 @@ func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *stri
 			return nil, fmt.Errorf("error reading response body from C7: %v", err)
 		}
 
-		if response.StatusCode == 200 || response.StatusCode == 201 {
+		// 200-299 is success, return body and nil error
+		if response.StatusCode >= 200 && response.StatusCode <= 299 {
 			return &body, nil
 		} else {
+			// Exponential backoff based on retry count
 			if response.StatusCode == http.StatusTooManyRequests {
 				exponSleepTime := SLEEP_TIME * time.Duration(i)
 				time.Sleep(exponSleepTime)
@@ -239,10 +243,11 @@ func PutJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *strin
 			return nil, fmt.Errorf("error reading response body from C7: %v", err)
 		}
 
-		if response.StatusCode == 200 || response.StatusCode == 201 {
+		// 200-299 is success, return body and nil error
+		if response.StatusCode >= 200 && response.StatusCode <= 299 {
 			return &body, nil
 		} else {
-			//fmt.Println("Attempt: ", i+1, " of ", attempts, " failed. Status Code: ", response.StatusCode, " Error: ", string(body))
+			// Exponential backoff based on retry count
 			if response.StatusCode == http.StatusTooManyRequests {
 				exponSleepTime := SLEEP_TIME * time.Duration(i)
 				time.Sleep(exponSleepTime)
@@ -296,9 +301,12 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int)
 			return nil, fmt.Errorf("while reading response body from C7, got: %v", err)
 		}
 
-		if response.StatusCode == 200 || response.StatusCode == 201 { // C7 docs are lying, they return 200 on success along with the full order object.
+		// C7 docs are lying, they return 200 on success along with the full order object.
+		// 200-299 is success, return body and nil error
+		if response.StatusCode >= 200 && response.StatusCode <= 299 {
 			return &body, nil
 		} else {
+			// Exponential backoff based on retry count
 			if response.StatusCode == http.StatusTooManyRequests {
 				exponSleepTime := SLEEP_TIME * time.Duration(i)
 				time.Sleep(exponSleepTime)
@@ -351,23 +359,53 @@ func GetFulfillmentId(OrderNumber int, tenant string, auth string, attempts int)
 	if len(orders.Orders[0].Fulfillments) == 0 {
 		return "", errors.New("no fulfillments found")
 	}
-
-	return orders.Orders[0].Fulfillments[0].ID, nil
+	for _, order := range orders.Orders {
+		if order.OrderNumber == OrderNumber {
+			// fulfillments are always an array of len 1 in C7.
+			return order.Fulfillments[0].ID, nil
+		}
+	}
+	return "", errors.New("no matching order found")
 
 }
 
-func DeleteC7Fulfillment(orderId string, fulfillmentId string, tenant string, auth string, attempts int) error {
+func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int) (*[]C7OrderFulfillment, error) {
+
+	orderUrl := "https://api.commerce7.com/v1/order?q=" + strconv.Itoa(OrderNumber)
+	// Get the order from C7
+	ordersBytes, err := GetJsonFromC7(&orderUrl, &tenant, &auth, attempts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the order
+	var orders C7Orders
+	err = json.Unmarshal(*ordersBytes, &orders)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the fulfillment ID
+	if len(orders.Orders) == 0 {
+		return nil, errors.New("no orders found")
+	}
+	if len(orders.Orders[0].Fulfillments) == 0 {
+		return nil, errors.New("no fulfillments found")
+	}
+	for _, order := range orders.Orders {
+		if order.OrderNumber == OrderNumber {
+			return &order.Fulfillments, nil
+		}
+	}
+	return nil, errors.New("no matching order found")
+
+}
+
+func DeleteC7Fulfillment(orderId string, fulfillmentId string, tenant string, auth string, attempts int) (*[]byte, error) {
 
 	deleteUrl := "https://api.commerce7.com/v1/order/" + orderId + "/fulfillment/" + fulfillmentId
 	// DELETE /order/{:id}/fulfillment/{:id}
-	_, err := DeleteFromC7(&deleteUrl, &tenant, &auth, attempts)
-	if err != nil {
-		return err
-	}
-
-	//fmt.Println("Delete Fulfillment Response: ", string(*bytes))
-
-	return nil
+	return DeleteFromC7(&deleteUrl, &tenant, &auth, attempts)
 
 }
 

@@ -181,23 +181,9 @@ type C7Order struct {
 	// } `json:"fraud"`
 	//FraudCheckStatus  string `json:"fraudCheckStatus"`
 	FulfillmentStatus string `json:"fulfillmentStatus"`
-	Fulfillments      []struct {
-		ID                  string    `json:"id"`
-		InventoryLocationID string    `json:"inventoryLocationId"`
-		Type                string    `json:"type"`
-		FulfillmentDate     time.Time `json:"fulfillmentDate"`
-		PackageCount        int       `json:"packageCount"`
-		Items               []struct {
-			ID                string `json:"id"`
-			QuantityFulfilled int    `json:"quantityFulfilled"`
-		} `json:"items"`
-		Shipped struct {
-			TrackingNumbers []string `json:"trackingNumbers"`
-			Carrier         string   `json:"carrier"`
-		} `json:"shipped"`
-	} `json:"fulfillments"`
-	GiftMessage string `json:"giftMessage"`
-	ID          string `json:"id"`
+	Fulfillments      []C7OrderFulfillment
+	GiftMessage       string `json:"giftMessage"`
+	ID                string `json:"id"`
 	//IsNoDuty     bool   `json:"isNoDuty"`
 	//IsNonTaxable bool   `json:"isNonTaxable"`
 	Items []struct {
@@ -423,6 +409,22 @@ type C7Order struct {
 	Total         int       `json:"total"`
 	TotalAfterTip int       `json:"totalAfterTip"`
 	UpdatedAt     time.Time `json:"updatedAt"`
+}
+
+type C7OrderFulfillment struct {
+	ID                  string    "json:\"id\""
+	InventoryLocationID string    "json:\"inventoryLocationId\""
+	Type                string    "json:\"type\""
+	FulfillmentDate     time.Time "json:\"fulfillmentDate\""
+	PackageCount        int       "json:\"packageCount\""
+	Items               []struct {
+		ID                string "json:\"id\""
+		QuantityFulfilled int    "json:\"quantityFulfilled\""
+	} "json:\"items\""
+	Shipped struct {
+		TrackingNumbers []string "json:\"trackingNumbers\""
+		Carrier         string   "json:\"carrier\""
+	} "json:\"shipped\""
 }
 
 type FulfillmentAllItems struct {

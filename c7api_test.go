@@ -127,7 +127,7 @@ func TestPostC7_New(t *testing.T) {
 
 	t.Log("Deleting Fulfillment ID: ", fulfillmentId)
 
-	err = DeleteC7Fulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
+	_, err = DeleteC7Fulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
 	if err != nil {
 		t.Error("Error deleting fulfillment: ", err.Error())
 		return
@@ -326,7 +326,7 @@ func TestPostJsonToC7(t *testing.T) {
 
 	t.Log("Fulfillment ID: ", fulfillmentId)
 
-	err = DeleteC7Fulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
+	_, err = DeleteC7Fulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
 	if err != nil {
 		t.Error("Error deleting fulfillment: ", err.Error())
 		return
@@ -421,7 +421,7 @@ func TestGetFulfillmentId(t *testing.T) {
 		expectedId   string
 	}{
 		{1232, AppAuthEncoded, 0, "9475723a-8f11-4111-9234-852d85813581"},
-		{1005, AppAuthEncoded, 0, "139826d7-348d-4a3b-aca0-5466e7462e79"},
+		{1007, AppAuthEncoded, 0, "030c8ab2-354b-41a7-acd4-a13bedc70dd5"},
 		{999, AppAuthEncoded, 0, ""},
 		{1239, AppAuthEncoded, 0, ""},
 		{1232, "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth")), 401, ""},
@@ -438,11 +438,11 @@ func TestGetFulfillmentId(t *testing.T) {
 		resultId, err := GetFulfillmentId(testCase.orderNumber, testTenant, testCase.auth, 1)
 		if err, ok := err.(C7Error); ok {
 			if err.StatusCode != testCase.expectedCode {
-				t.Error("Test case: ", i+1, " expected status code: ", testCase.expectedCode, " got: ", err.StatusCode)
+				t.Error("Test case:", i+1, "expected status code:", testCase.expectedCode, "got:", err.StatusCode)
 			}
 		}
 		if resultId != testCase.expectedId {
-			t.Error("Test case: ", i+1, " expected id: ", testCase.expectedId, " got: ", resultId)
+			t.Error("Test case:", i+1, "expected id:", testCase.expectedId, "got:", resultId)
 		}
 	}
 }
