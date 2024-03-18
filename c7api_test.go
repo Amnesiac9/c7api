@@ -247,7 +247,7 @@ func TestGetJSONFromC7(t *testing.T) {
 
 	jsonBytes, err = GetJsonFromC7(&urlString, &tenant, &badAuth, 3)
 	if err == nil {
-		t.Error("Error, did not get err with bad auth: ", err.Error())
+		t.Error("Error, did not get err with bad auth.")
 		return
 	}
 	fmt.Println(err.Error())
