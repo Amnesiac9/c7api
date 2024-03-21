@@ -15,14 +15,13 @@ import (
 const SLEEP_TIME = 500 * time.Millisecond
 
 // Basic requests to C7 endpoint wrapped in retry logic with exponential backoff
-func NewRequest(method string, url *string, reqBody *[]byte, tenant *string, c7AppAuthEncoded *string, retryCount int) (*[]byte, error) {
+func NewRequest(method string, url *string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]byte, error) {
 	//
-	if url == nil || tenant == nil || c7AppAuthEncoded == nil {
-		return nil, fmt.Errorf("error getting JSON from C7: nil value in arguments")
+	if url == nil || tenant == "" || c7AppAuthEncoded == "" {
+		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
 	}
 
 	if reqBody == nil {
-		fmt.Println("reqBody is nil")
 		reqBody = &[]byte{}
 	}
 
@@ -42,9 +41,9 @@ func NewRequest(method string, url *string, reqBody *[]byte, tenant *string, c7A
 			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
 		}
 
-		req.Header.Set("tenant", *tenant)
+		req.Header.Set("tenant", tenant)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Add("Authorization", *c7AppAuthEncoded)
+		req.Header.Add("Authorization", c7AppAuthEncoded)
 
 		response, err = client.Do(req)
 		if err != nil {
@@ -81,10 +80,10 @@ func NewRequest(method string, url *string, reqBody *[]byte, tenant *string, c7A
 //
 // Attempts to get JSON from C7, if it fails, it will retry the request up to the number of attempts specified. Min 1, Max 10.
 // Will wait 500ms between attempts.
-func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int) (*[]byte, error) {
+func GetJsonFromC7(urlString *string, tenant string, auth string, attempts int) (*[]byte, error) {
 
-	if urlString == nil || tenant == nil || auth == nil {
-		return nil, fmt.Errorf("error getting JSON from C7: nil value in arguments")
+	if urlString == nil || tenant == "" || auth == "" {
+		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
 	}
 
 	if attempts < 1 {
@@ -105,9 +104,9 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int
 			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
 		}
 
-		req.Header.Set("tenant", *tenant)
+		req.Header.Set("tenant", tenant)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Add("Authorization", *auth)
+		req.Header.Add("Authorization", auth)
 
 		response, err = client.Do(req)
 		if err != nil {
@@ -145,9 +144,9 @@ func GetJsonFromC7(urlString *string, tenant *string, auth *string, attempts int
 //
 // URL Example: [Your Web Endpoint]?action=shipnotify&order_number=[Order Number]&carrier=[Carrier]&service=&tracking_number=[Tracking Number]
 // URL END POINT]?action=shipnotify&order_number=ABC123&carrier=USPS&service=&tracking_number=9511343223432432432
-func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *string, attempts int) (*[]byte, error) {
+func PostJsonToC7(urlString *string, reqBody *[]byte, tenant string, auth string, attempts int) (*[]byte, error) {
 
-	if urlString == nil || tenant == nil || reqBody == nil || auth == nil {
+	if urlString == nil || tenant == "" || reqBody == nil || auth == "" {
 		return nil, fmt.Errorf("error posting JSON to C7: nil value in arguments")
 	}
 
@@ -170,9 +169,9 @@ func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *stri
 			return nil, fmt.Errorf("error creating POST request to C7: %v", err)
 		}
 
-		req.Header.Set("tenant", *tenant)
+		req.Header.Set("tenant", tenant)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Add("Authorization", *auth) //AppAuthEncoded
+		req.Header.Add("Authorization", auth) //AppAuthEncoded
 
 		response, err = client.Do(req)
 		if err != nil {
@@ -203,9 +202,9 @@ func PostJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *stri
 	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
 }
 
-func PutJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *string, attempts int) (*[]byte, error) {
-	if urlString == nil || tenant == nil || reqBody == nil || auth == nil {
-		return nil, fmt.Errorf("error posting JSON to C7: nil value in arguments")
+func PutJsonToC7(urlString *string, reqBody *[]byte, tenant string, auth string, attempts int) (*[]byte, error) {
+	if urlString == nil || reqBody == nil || auth == "" {
+		return nil, fmt.Errorf("error posting JSON to C7: nil or blank value in arguments")
 	}
 
 	if attempts < 1 {
@@ -227,9 +226,9 @@ func PutJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *strin
 			return nil, fmt.Errorf("error creating PUT request to C7: %v", err)
 		}
 
-		req.Header.Set("tenant", *tenant)
+		req.Header.Set("tenant", tenant)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Add("Authorization", *auth) //AppAuthEncoded
+		req.Header.Add("Authorization", auth) //AppAuthEncoded
 
 		response, err = client.Do(req)
 		if err != nil {
@@ -260,9 +259,9 @@ func PutJsonToC7(urlString *string, tenant *string, reqBody *[]byte, auth *strin
 	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
 }
 
-func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int) (*[]byte, error) {
-	if urlString == nil || tenant == nil || auth == nil {
-		return nil, fmt.Errorf("nil value in arguments")
+func DeleteFromC7(urlString *string, tenant string, auth string, attempts int) (*[]byte, error) {
+	if urlString == nil || tenant == "" || auth == "" {
+		return nil, fmt.Errorf("nil or blank value in arguments")
 	}
 
 	if attempts < 1 {
@@ -285,9 +284,9 @@ func DeleteFromC7(urlString *string, tenant *string, auth *string, attempts int)
 		}
 
 		// Set headers
-		req.Header.Set("tenant", *tenant)
+		req.Header.Set("tenant", tenant)
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Add("Authorization", *auth) //AppAuthEncoded
+		req.Header.Add("Authorization", auth) //AppAuthEncoded
 
 		response, err = client.Do(req)
 		if err != nil {
@@ -340,7 +339,7 @@ func GetFulfillmentId(OrderNumber int, tenant string, auth string, attempts int)
 
 	orderUrl := "https://api.commerce7.com/v1/order?q=" + strconv.Itoa(OrderNumber)
 	// Get the order from C7
-	ordersBytes, err := GetJsonFromC7(&orderUrl, &tenant, &auth, attempts)
+	ordersBytes, err := GetJsonFromC7(&orderUrl, tenant, auth, attempts)
 	if err != nil {
 		return "", err
 	}
@@ -373,7 +372,7 @@ func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int) 
 
 	orderUrl := "https://api.commerce7.com/v1/order?q=" + strconv.Itoa(OrderNumber)
 	// Get the order from C7
-	ordersBytes, err := GetJsonFromC7(&orderUrl, &tenant, &auth, attempts)
+	ordersBytes, err := GetJsonFromC7(&orderUrl, tenant, auth, attempts)
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +404,7 @@ func DeleteC7Fulfillment(orderId string, fulfillmentId string, tenant string, au
 
 	deleteUrl := "https://api.commerce7.com/v1/order/" + orderId + "/fulfillment/" + fulfillmentId
 	// DELETE /order/{:id}/fulfillment/{:id}
-	return DeleteFromC7(&deleteUrl, &tenant, &auth, attempts)
+	return DeleteFromC7(&deleteUrl, tenant, auth, attempts)
 
 }
 
