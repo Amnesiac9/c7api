@@ -15,7 +15,7 @@ import (
 const SLEEP_TIME = 500 * time.Millisecond
 
 // Basic requests to C7 endpoint wrapped in retry logic with exponential backoff
-func NewRequest(method string, url *string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]byte, error) {
+func MakeRequest(method string, url *string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]byte, error) {
 	//
 	if url == nil || tenant == "" || c7AppAuthEncoded == "" {
 		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
@@ -406,6 +406,32 @@ func DeleteC7Fulfillment(orderId string, fulfillmentId string, tenant string, au
 	// DELETE /order/{:id}/fulfillment/{:id}
 	return DeleteFromC7(&deleteUrl, tenant, auth, attempts)
 
+}
+
+func MarkNoFulfillmentRequired(orderId string, shipTime time.Time, tenant string, auth string, attempts int) error {
+	// POST // https://api.commerce7.com/v1/order/b9f10447-4285-4dc2-add2-b38798dba8f9/fulfillment
+
+	// Create new Fulfillment from struct
+	var fulfillment FulfillmentAllItems
+	fulfillment.SendTransactionEmail = false
+	fulfillment.Type = "No Fulfillment Required"
+	fulfillment.FulfillmentDate = shipTime
+
+	url := "https://api.commerce7.com/v1/order/" + orderId + "/fulfillment/all"
+
+	// Convert Fulfillment struct to JSON
+	fulfillmentJSON, err := json.Marshal(fulfillment)
+	if err != nil {
+		return errors.New("error marshaling NFR fulfillment into JSON: " + err.Error())
+	}
+
+	// Post the fulfillment to C7
+	_, err = MakeRequest("POST", &url, &fulfillmentJSON, tenant, auth, attempts)
+	if err != nil {
+		return errors.New("error posting NFR fulfillment to C7: " + err.Error())
+	}
+
+	return nil
 }
 
 func IsCarrierSupported(carrier string) bool {

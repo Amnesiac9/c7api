@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -66,7 +67,7 @@ func TestGetC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := NewRequest(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := MakeRequest(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -137,7 +138,7 @@ func TestPostC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := NewRequest(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := MakeRequest(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -202,7 +203,7 @@ func TestDeleteC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := NewRequest(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := MakeRequest(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -217,7 +218,7 @@ func TestDeleteC7_New(t *testing.T) {
 	t.Log("Adding Fulfillment for test TestDeleteC7_New")
 
 	// Post previous fulfillment for test
-	jsonBytes, err := NewRequest("POST", &urlStringFulfillment, &goodBytes, tenant, goodAuth, 1)
+	jsonBytes, err := MakeRequest("POST", &urlStringFulfillment, &goodBytes, tenant, goodAuth, 1)
 	if err != nil || jsonBytes == nil {
 		t.Error("Error posting fulfillment: ", err.Error())
 		return
@@ -445,6 +446,40 @@ func TestGetFulfillmentId(t *testing.T) {
 			t.Error("Test case:", i+1, "expected id:", testCase.expectedId, "got:", resultId)
 		}
 	}
+}
+
+func Test_MarkNoFulfillmentRequired(t *testing.T) {
+	orderNumber := 1020
+	orderId := "b9f10447-4285-4dc2-add2-b38798dba8f9"
+
+	// Delete previous fulfillment for test
+	fulfillmentId, err := GetFulfillmentId(orderNumber, testTenant, AppAuthEncoded, 1)
+	if err != nil {
+		t.Error("Error getting fulfillment id: ", err.Error())
+		return
+	}
+
+	t.Log("Fulfillment ID: ", fulfillmentId)
+
+	_, err = DeleteC7Fulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
+	if err != nil {
+		t.Error("Error deleting fulfillment: ", err.Error())
+		return
+	}
+
+	shippedTime, err := time.Parse(time.RFC3339, "2023-07-30T10:59:32.000Z")
+	if err != nil {
+		t.Error("Error parsing time: ", err.Error())
+		return
+	}
+
+	// Mark no fulfillment required
+	err = MarkNoFulfillmentRequired(orderId, shippedTime, testTenant, AppAuthEncoded, 1)
+	if err != nil {
+		t.Error("Error marking no fulfillment required: ", err.Error())
+		return
+	}
+
 }
 
 func Test_IsCarrierSupported(t *testing.T) {

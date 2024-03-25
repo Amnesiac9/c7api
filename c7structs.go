@@ -431,7 +431,7 @@ type FulfillmentAllItems struct {
 	SendTransactionEmail bool      `json:"sendTransactionEmail"`
 	Type                 string    `json:"type"`
 	FulfillmentDate      time.Time `json:"fulfillmentDate"`
-	Shipped              struct {
+	Shipped              *struct {
 		TrackingNumbers []string `json:"trackingNumbers"`
 		Carrier         string   `json:"carrier"`
 	} `json:"shipped"`
