@@ -15,7 +15,7 @@ import (
 const SLEEP_TIME = 500 * time.Millisecond
 
 // Basic requests to C7 endpoint wrapped in retry logic with exponential backoff
-func MakeRequest(method string, url *string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]byte, error) {
+func Request(method string, url *string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]byte, error) {
 	//
 	if url == nil || tenant == "" || c7AppAuthEncoded == "" {
 		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
@@ -80,7 +80,7 @@ func MakeRequest(method string, url *string, reqBody *[]byte, tenant string, c7A
 //
 // Attempts to get JSON from C7, if it fails, it will retry the request up to the number of attempts specified. Min 1, Max 10.
 // Will wait 500ms between attempts.
-func GetJsonFromC7(urlString *string, tenant string, auth string, attempts int) (*[]byte, error) {
+func GetReq(urlString *string, tenant string, auth string, attempts int) (*[]byte, error) {
 
 	if urlString == nil || tenant == "" || auth == "" {
 		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
@@ -144,7 +144,7 @@ func GetJsonFromC7(urlString *string, tenant string, auth string, attempts int) 
 //
 // URL Example: [Your Web Endpoint]?action=shipnotify&order_number=[Order Number]&carrier=[Carrier]&service=&tracking_number=[Tracking Number]
 // URL END POINT]?action=shipnotify&order_number=ABC123&carrier=USPS&service=&tracking_number=9511343223432432432
-func PostJsonToC7(urlString *string, reqBody *[]byte, tenant string, auth string, attempts int) (*[]byte, error) {
+func PostReq(urlString *string, reqBody *[]byte, tenant string, auth string, attempts int) (*[]byte, error) {
 
 	if urlString == nil || tenant == "" || reqBody == nil || auth == "" {
 		return nil, fmt.Errorf("error posting JSON to C7: nil value in arguments")
@@ -202,7 +202,7 @@ func PostJsonToC7(urlString *string, reqBody *[]byte, tenant string, auth string
 	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
 }
 
-func PutJsonToC7(urlString *string, reqBody *[]byte, tenant string, auth string, attempts int) (*[]byte, error) {
+func PutReq(urlString *string, reqBody *[]byte, tenant string, auth string, attempts int) (*[]byte, error) {
 	if urlString == nil || reqBody == nil || auth == "" {
 		return nil, fmt.Errorf("error posting JSON to C7: nil or blank value in arguments")
 	}
@@ -259,7 +259,7 @@ func PutJsonToC7(urlString *string, reqBody *[]byte, tenant string, auth string,
 	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
 }
 
-func DeleteFromC7(urlString *string, tenant string, auth string, attempts int) (*[]byte, error) {
+func DeleteReq(urlString *string, tenant string, auth string, attempts int) (*[]byte, error) {
 	if urlString == nil || tenant == "" || auth == "" {
 		return nil, fmt.Errorf("nil or blank value in arguments")
 	}
@@ -339,7 +339,7 @@ func GetFulfillmentId(OrderNumber int, tenant string, auth string, attempts int)
 
 	orderUrl := "https://api.commerce7.com/v1/order?q=" + strconv.Itoa(OrderNumber)
 	// Get the order from C7
-	ordersBytes, err := GetJsonFromC7(&orderUrl, tenant, auth, attempts)
+	ordersBytes, err := GetReq(&orderUrl, tenant, auth, attempts)
 	if err != nil {
 		return "", err
 	}
@@ -372,7 +372,7 @@ func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int) 
 
 	orderUrl := "https://api.commerce7.com/v1/order?q=" + strconv.Itoa(OrderNumber)
 	// Get the order from C7
-	ordersBytes, err := GetJsonFromC7(&orderUrl, tenant, auth, attempts)
+	ordersBytes, err := GetReq(&orderUrl, tenant, auth, attempts)
 	if err != nil {
 		return nil, err
 	}
@@ -400,11 +400,11 @@ func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int) 
 
 }
 
-func DeleteC7Fulfillment(orderId string, fulfillmentId string, tenant string, auth string, attempts int) (*[]byte, error) {
+func DeleteFulfillment(orderId string, fulfillmentId string, tenant string, auth string, attempts int) (*[]byte, error) {
 
 	deleteUrl := "https://api.commerce7.com/v1/order/" + orderId + "/fulfillment/" + fulfillmentId
 	// DELETE /order/{:id}/fulfillment/{:id}
-	return DeleteFromC7(&deleteUrl, tenant, auth, attempts)
+	return DeleteReq(&deleteUrl, tenant, auth, attempts)
 
 }
 
@@ -426,7 +426,7 @@ func MarkNoFulfillmentRequired(orderId string, shipTime time.Time, tenant string
 	}
 
 	// Post the fulfillment to C7
-	_, err = MakeRequest("POST", &url, &fulfillmentJSON, tenant, auth, attempts)
+	_, err = Request("POST", &url, &fulfillmentJSON, tenant, auth, attempts)
 	if err != nil {
 		return errors.New("error posting NFR fulfillment to C7: " + err.Error())
 	}

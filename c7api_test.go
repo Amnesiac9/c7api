@@ -67,7 +67,7 @@ func TestGetC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := MakeRequest(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := Request(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -128,7 +128,7 @@ func TestPostC7_New(t *testing.T) {
 
 	t.Log("Deleting Fulfillment ID: ", fulfillmentId)
 
-	_, err = DeleteC7Fulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
+	_, err = DeleteFulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
 	if err != nil {
 		t.Error("Error deleting fulfillment: ", err.Error())
 		return
@@ -138,7 +138,7 @@ func TestPostC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := MakeRequest(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := Request(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -203,7 +203,7 @@ func TestDeleteC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := MakeRequest(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := Request(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -218,7 +218,7 @@ func TestDeleteC7_New(t *testing.T) {
 	t.Log("Adding Fulfillment for test TestDeleteC7_New")
 
 	// Post previous fulfillment for test
-	jsonBytes, err := MakeRequest("POST", &urlStringFulfillment, &goodBytes, tenant, goodAuth, 1)
+	jsonBytes, err := Request("POST", &urlStringFulfillment, &goodBytes, tenant, goodAuth, 1)
 	if err != nil || jsonBytes == nil {
 		t.Error("Error posting fulfillment: ", err.Error())
 		return
@@ -235,7 +235,7 @@ func TestGetJSONFromC7(t *testing.T) {
 	goodAuth := AppAuthEncoded
 	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
 
-	jsonBytes, err := GetJsonFromC7(&urlString, tenant, goodAuth, 0)
+	jsonBytes, err := GetReq(&urlString, tenant, goodAuth, 0)
 	if err != nil {
 		t.Error("Error getting JSON from C7: ", err.Error())
 		return
@@ -246,7 +246,7 @@ func TestGetJSONFromC7(t *testing.T) {
 		return
 	}
 
-	jsonBytes, err = GetJsonFromC7(&urlString, tenant, badAuth, 3)
+	jsonBytes, err = GetReq(&urlString, tenant, badAuth, 3)
 	if err == nil {
 		t.Error("Error, did not get err with bad auth.")
 		return
@@ -268,7 +268,7 @@ func TestGetJSONFromC7(t *testing.T) {
 		return
 	}
 
-	_, err = GetJsonFromC7(nil, "", "", 0)
+	_, err = GetReq(nil, "", "", 0)
 	if err == nil {
 		t.Error("Error should not be nil with nil params.")
 		return
@@ -327,14 +327,14 @@ func TestPostJsonToC7(t *testing.T) {
 
 	t.Log("Fulfillment ID: ", fulfillmentId)
 
-	_, err = DeleteC7Fulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
+	_, err = DeleteFulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
 	if err != nil {
 		t.Error("Error deleting fulfillment: ", err.Error())
 		return
 	}
 
 	for i, testCase := range testCases {
-		jsonBytes, err := PostJsonToC7(&testCase.urlString, &testCase.bytes, testCase.tenant, testCase.auth, testCase.attempts)
+		jsonBytes, err := PostReq(&testCase.urlString, &testCase.bytes, testCase.tenant, testCase.auth, testCase.attempts)
 		if err != nil && err.(C7Error).StatusCode != testCase.expectedCode {
 			t.Error("TestPostJsonToC7, test case: ", i+1, " Expected status code: ", testCase.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -354,7 +354,7 @@ func TestDeleteFromC7(t *testing.T) {
 	badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
 
 	// Test 1
-	bytes, err := DeleteFromC7(&urlString, tenant, badAuth, 2)
+	bytes, err := DeleteReq(&urlString, tenant, badAuth, 2)
 	if err == nil {
 		t.Error("Error should not be nil with bad auth.")
 		return
@@ -371,7 +371,7 @@ func TestDeleteFromC7(t *testing.T) {
 	}
 
 	// Test 2
-	bytes2, err := DeleteFromC7(&urlString, tenant, goodAuth, 0)
+	bytes2, err := DeleteReq(&urlString, tenant, goodAuth, 0)
 	if err == nil {
 		t.Error("Error should not be nil with good auth.")
 		return
@@ -387,7 +387,7 @@ func TestDeleteFromC7(t *testing.T) {
 		return
 	}
 
-	_, err = DeleteFromC7(nil, "", "", 0)
+	_, err = DeleteReq(nil, "", "", 0)
 	if err == nil {
 		t.Error("Error should not be nil with nil params.")
 		return
@@ -461,7 +461,7 @@ func Test_MarkNoFulfillmentRequired(t *testing.T) {
 
 	t.Log("Fulfillment ID: ", fulfillmentId)
 
-	_, err = DeleteC7Fulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
+	_, err = DeleteFulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
 	if err != nil {
 		t.Error("Error deleting fulfillment: ", err.Error())
 		return
