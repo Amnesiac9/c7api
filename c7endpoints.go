@@ -1,6 +1,6 @@
 package c7api
 
-type Endpoint struct {
+type endpoints struct {
 	Auth           string // "https://api.commerce7.com/v1/account/user" - https://developer.commerce7.com/docs/commerce7-apis
 	Cart           string // "https://api.commerce7.com/v1/cart" - https://developer.commerce7.com/docs/orders
 	Customer       string // "https://api.commerce7.com/v1/customer" - https://developer.commerce7.com/docs/customers
@@ -13,8 +13,8 @@ type Endpoint struct {
 	Product        string // "https://api.commerce7.com/v1/product" - https://developer.commerce7.com/docs/products
 }
 
-func GetEndpointsV1() *Endpoint {
-	return &Endpoint{
+func GetEndpointsV1() *endpoints {
+	return &endpoints{
 		Auth:           "https://api.commerce7.com/v1/account/user",
 		Cart:           "https://api.commerce7.com/v1/cart",
 		Customer:       "https://api.commerce7.com/v1/customer",
