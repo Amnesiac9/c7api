@@ -345,7 +345,7 @@ func GetFulfillmentId(OrderNumber int, tenant string, auth string, attempts int)
 	}
 
 	// Unmarshal the order
-	var orders C7Orders
+	var orders C7OrdersFulfillmentsOnly
 	err = json.Unmarshal(*ordersBytes, &orders)
 	if err != nil {
 		return "", err
