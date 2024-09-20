@@ -15,7 +15,7 @@ import (
 const SLEEP_TIME = 500 * time.Millisecond
 
 // Basic request. Will return the response or error if any.
-func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string) (*http.Response, error) {
+func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, errorOnNotOK bool) (*http.Response, error) {
 	//
 	if url == "" || tenant == "" || c7AppAuthEncoded == "" {
 		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
@@ -39,6 +39,10 @@ func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAut
 	response, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error making GET request to C7: %v", err)
+	}
+
+	if errorOnNotOK && response.StatusCode < 200 && response.StatusCode > 299 {
+		return response, errors.New("reponse status not within 200-299")
 	}
 
 	return response, nil
