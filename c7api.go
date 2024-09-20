@@ -42,7 +42,7 @@ func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAut
 	}
 
 	if errorOnNotOK && !ResponseIsOK(response.StatusCode) {
-		return response, errors.New("reponse status not within 200-299")
+		return response, errors.New("reponse status not within 200-299: " + response.Status)
 	}
 
 	return response, nil
