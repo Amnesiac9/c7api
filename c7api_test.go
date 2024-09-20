@@ -228,7 +228,7 @@ func TestDeleteC7_New(t *testing.T) {
 
 /// OLD TESTS ///
 
-func TestGetJSONFromC7(t *testing.T) {
+func TestGet(t *testing.T) {
 
 	urlString := "https://api.commerce7.com/v1/order?orderPaidDate=btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z"
 	tenant := testTenant
@@ -276,7 +276,7 @@ func TestGetJSONFromC7(t *testing.T) {
 
 }
 
-func TestPostJsonToC7(t *testing.T) {
+func TestPost(t *testing.T) {
 
 	//urlString := "https://api.commerce7.com/v1/order"
 	urlStringFulfillment := "https://api.commerce7.com/v1/order/034e6096-429d-452c-b258-5d37a1522934/fulfillment/all"
