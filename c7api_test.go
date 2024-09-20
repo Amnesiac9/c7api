@@ -67,7 +67,7 @@ func TestGetC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := Request(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -138,7 +138,7 @@ func TestPostC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := Request(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -203,7 +203,7 @@ func TestDeleteC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := Request(tc.method, &tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -218,7 +218,7 @@ func TestDeleteC7_New(t *testing.T) {
 	t.Log("Adding Fulfillment for test TestDeleteC7_New")
 
 	// Post previous fulfillment for test
-	jsonBytes, err := Request("POST", &urlStringFulfillment, &goodBytes, tenant, goodAuth, 1)
+	jsonBytes, err := RequestWithRetryAndRead("POST", urlStringFulfillment, &goodBytes, tenant, goodAuth, 1)
 	if err != nil || jsonBytes == nil {
 		t.Error("Error posting fulfillment: ", err.Error())
 		return

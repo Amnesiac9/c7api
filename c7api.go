@@ -14,10 +14,10 @@ import (
 
 const SLEEP_TIME = 500 * time.Millisecond
 
-// Basic requests to C7 endpoint wrapped in retry logic with exponential backoff
-func Request(method string, url *string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]byte, error) {
+// Basic requests to C7 endpoint wrapped in retry logic with exponential backoff.
+func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]byte, error) {
 	//
-	if url == nil || tenant == "" || c7AppAuthEncoded == "" {
+	if url == "" || tenant == "" || c7AppAuthEncoded == "" {
 		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
 	}
 
@@ -36,7 +36,7 @@ func Request(method string, url *string, reqBody *[]byte, tenant string, c7AppAu
 	body := []byte{}
 
 	for i := 0; i <= retryCount; i++ {
-		req, err := http.NewRequest(method, *url, bytes.NewBuffer(*reqBody))
+		req, err := http.NewRequest(method, url, bytes.NewBuffer(*reqBody))
 		if err != nil {
 			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
 		}
@@ -71,6 +71,37 @@ func Request(method string, url *string, reqBody *[]byte, tenant string, c7AppAu
 	}
 
 	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
+
+}
+
+func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string) (*http.Response, error) {
+	//
+	if url == "" || tenant == "" || c7AppAuthEncoded == "" {
+		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
+	}
+
+	if reqBody == nil {
+		reqBody = &[]byte{}
+	}
+
+	client := &http.Client{}
+	response := &http.Response{StatusCode: 0}
+
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(*reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("error creating GET request for C7: %v", err)
+	}
+
+	req.Header.Set("tenant", tenant)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", c7AppAuthEncoded)
+
+	response, err = client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error making GET request to C7: %v", err)
+	}
+
+	return response, nil
 
 }
 
@@ -426,7 +457,7 @@ func MarkNoFulfillmentRequired(orderId string, shipTime time.Time, tenant string
 	}
 
 	// Post the fulfillment to C7
-	_, err = Request("POST", &url, &fulfillmentJSON, tenant, auth, attempts)
+	_, err = RequestWithRetryAndRead("POST", url, &fulfillmentJSON, tenant, auth, attempts)
 	if err != nil {
 		return errors.New("error posting NFR fulfillment to C7: " + err.Error())
 	}
