@@ -14,7 +14,39 @@ import (
 
 const SLEEP_TIME = 500 * time.Millisecond
 
+// Basic request. Will return the response or error if any.
+func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string) (*http.Response, error) {
+	//
+	if url == "" || tenant == "" || c7AppAuthEncoded == "" {
+		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
+	}
+
+	if reqBody == nil {
+		reqBody = &[]byte{}
+	}
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(*reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("error creating GET request for C7: %v", err)
+	}
+
+	req.Header.Set("tenant", tenant)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", c7AppAuthEncoded)
+
+	response, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error making GET request to C7: %v", err)
+	}
+
+	return response, nil
+
+}
+
 // Basic requests to C7 endpoint wrapped in retry logic with exponential backoff.
+// Reads out the response body and returns the bytes.
 func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]byte, error) {
 	//
 	if url == "" || tenant == "" || c7AppAuthEncoded == "" {
@@ -70,44 +102,13 @@ func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant 
 		}
 	}
 
-	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
-
-}
-
-func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string) (*http.Response, error) {
-	//
-	if url == "" || tenant == "" || c7AppAuthEncoded == "" {
-		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
-	}
-
-	if reqBody == nil {
-		reqBody = &[]byte{}
-	}
-
-	client := &http.Client{}
-	response := &http.Response{StatusCode: 0}
-
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(*reqBody))
-	if err != nil {
-		return nil, fmt.Errorf("error creating GET request for C7: %v", err)
-	}
-
-	req.Header.Set("tenant", tenant)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("Authorization", c7AppAuthEncoded)
-
-	response, err = client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("error making GET request to C7: %v", err)
-	}
-
-	return response, nil
+	return &body, C7Error{response.StatusCode, errors.New(string(body))}
 
 }
 
 // Errors will return a custom error type called C7Error if there is an error directly from C7, calling err.Error() on this will return the error message from C7 and the status code.
-
-// Takes in a full URL string and request JSON from C7 and return it as a byte array
+//
+// # Takes in a full URL string and request JSON from C7 and return it as a byte array
 //
 // Attempts to get JSON from C7, if it fails, it will retry the request up to the number of attempts specified. Min 1, Max 10.
 // Will wait 500ms between attempts.
@@ -166,7 +167,7 @@ func GetReq(urlString *string, tenant string, auth string, attempts int) (*[]byt
 	}
 
 	// Response is not 200, return error
-	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
+	return &body, C7Error{response.StatusCode, errors.New(string(body))}
 
 }
 
@@ -230,7 +231,7 @@ func PostReq(urlString *string, reqBody *[]byte, tenant string, auth string, att
 		}
 	}
 
-	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
+	return &body, C7Error{response.StatusCode, errors.New(string(body))}
 }
 
 func PutReq(urlString *string, reqBody *[]byte, tenant string, auth string, attempts int) (*[]byte, error) {
@@ -287,7 +288,7 @@ func PutReq(urlString *string, reqBody *[]byte, tenant string, auth string, atte
 		}
 	}
 
-	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
+	return &body, C7Error{response.StatusCode, errors.New(string(body))}
 }
 
 func DeleteReq(urlString *string, tenant string, auth string, attempts int) (*[]byte, error) {
@@ -347,7 +348,7 @@ func DeleteReq(urlString *string, tenant string, auth string, attempts int) (*[]
 	}
 
 	// Response is not 200 or 201, return error
-	return &body, C7Error{response.StatusCode, fmt.Errorf(string(body))}
+	return &body, C7Error{response.StatusCode, errors.New(string(body))}
 
 }
 
