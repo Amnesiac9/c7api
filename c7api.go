@@ -41,7 +41,7 @@ func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAut
 		return nil, fmt.Errorf("error making GET request to C7: %v", err)
 	}
 
-	if errorOnNotOK && response.StatusCode < 200 && response.StatusCode > 299 {
+	if errorOnNotOK && !ResponseIsOK(response.StatusCode) {
 		return response, errors.New("reponse status not within 200-299")
 	}
 
@@ -485,4 +485,8 @@ func IsCarrierSupported(carrier string) bool {
 	default:
 		return false
 	}
+}
+
+func ResponseIsOK(statusCode int) bool {
+	return statusCode >= 200 && statusCode <= 299
 }
