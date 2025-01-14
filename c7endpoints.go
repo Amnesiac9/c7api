@@ -12,6 +12,7 @@ type endpoints struct {
 	Order          string // "https://api.commerce7.com/v1/order" - https://developer.commerce7.com/docs/orders
 	Product        string // "https://api.commerce7.com/v1/product" - https://developer.commerce7.com/docs/products
 	Tag            string // "https://api.commerce7.com/v1/tag" - example: https://api.commerce7.com/v1/tag/customer?q=&type=Manual - Use q to search for specific keywords, type manual to get only manually applied tags
+	Loyalty        string // "https://api.commerce7.com/v1/loyalty" - requires Commerce7 Loyalty Extension https://documentation.commerce7.com/loyalty-feature-overview
 }
 
 func GetEndpointsV1() *endpoints {
@@ -27,5 +28,6 @@ func GetEndpointsV1() *endpoints {
 		Order:          "https://api.commerce7.com/v1/order",
 		Product:        "https://api.commerce7.com/v1/product",
 		Tag:            "https://api.commerce7.com/v1/tag",
+		Loyalty:        "https://api.commerce7.com/v1/loyalty",
 	}
 }
