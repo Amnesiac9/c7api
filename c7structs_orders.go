@@ -411,17 +411,17 @@ type C7Order struct {
 }
 
 type C7OrderFulfillment struct {
-	ID                  string    "json:\"id\""
-	InventoryLocationID string    "json:\"inventoryLocationId\""
-	Type                string    "json:\"type\""
-	FulfillmentDate     time.Time "json:\"fulfillmentDate\""
-	PackageCount        int       "json:\"packageCount\""
+	ID                  string    `json:"id"`
+	InventoryLocationID string    `json:"inventoryLocationId"`
+	Type                string    `json:"type"`
+	FulfillmentDate     time.Time `json:"fulfillmentDate"`
+	PackageCount        int       `json:"packageCount"`
 	Items               []struct {
-		ID                string "json:\"id\""
-		QuantityFulfilled int    "json:\"quantityFulfilled\""
-	} "json:\"items\""
+		ID                string `json:"id"`
+		QuantityFulfilled int    `json:"quantityFulfilled"`
+	} `json:"items"`
 	Shipped struct {
-		TrackingNumbers []string "json:\"trackingNumbers\""
-		Carrier         string   "json:\"carrier\""
-	} "json:\"shipped\""
+		TrackingNumbers []string `json:"trackingNumbers"`
+		Carrier         string   `json:"carrier"`
+	} `json:"shipped"`
 }

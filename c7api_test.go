@@ -25,6 +25,72 @@ func (rl *rateLimiterMock) Wait() {
 	time.Sleep(1 * time.Millisecond)
 }
 
+func TestGetC7_Request(t *testing.T) {
+
+	urlStringOrders := "https://api.commerce7.com/v1/order?orderPaidDate=btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z"
+	tenant := testTenant
+	goodAuth := AppAuthEncoded
+	//badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
+
+	type testCase struct {
+		name               string
+		method             string
+		url                string
+		body               []byte
+		tenant             string
+		auth               string
+		attempts           int
+		expectedStatusCode int
+		expectedErrorText  string
+	}
+
+	testCases := []testCase{
+		{
+			name:               "Good GET",
+			method:             "GET",
+			url:                urlStringOrders,
+			body:               nil,
+			tenant:             tenant,
+			auth:               goodAuth,
+			attempts:           0,
+			expectedStatusCode: 200,
+		},
+		{
+			name:               "Bad Auth GET",
+			method:             "GET",
+			url:                urlStringOrders,
+			body:               nil,
+			tenant:             tenant,
+			auth:               "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth")),
+			attempts:           0,
+			expectedStatusCode: 401,
+			expectedErrorText:  "reponse status not within 200-299: 401 Unauthorized",
+		},
+	}
+
+	for _, tc := range testCases {
+
+		//t.Log("Test", tc.name)
+
+		resp, err := Request(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, true)
+		if err != nil && err.Error() != tc.expectedErrorText {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, " unexpected error returned: ", err.Error())
+			return
+		}
+
+		if resp == nil {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, " response is nil")
+			return
+		}
+
+		if resp.StatusCode != tc.expectedStatusCode {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedStatusCode, " got: ", resp.StatusCode)
+		}
+
+	}
+
+}
+
 func TestGetC7_New(t *testing.T) {
 
 	urlStringOrders := "https://api.commerce7.com/v1/order?orderPaidDate=btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z"
@@ -129,7 +195,7 @@ func TestPostC7_New(t *testing.T) {
 	}
 
 	// Delete previous fulfillment for test
-	fulfillmentIds, err := GetFulfillmentId(orderNumber, testTenant, AppAuthEncoded, 1)
+	fulfillmentIds, err := GetFulfillmentIds(orderNumber, testTenant, AppAuthEncoded, 1)
 	if err != nil {
 		t.Error("Error getting fulfillment id: ", err.Error())
 		return
@@ -185,7 +251,7 @@ func TestDeleteC7_New(t *testing.T) {
 		"packageCount": 1
 	}`)
 
-	fulfillmentIds, err := GetFulfillmentId(orderNumber, testTenant, AppAuthEncoded, 1)
+	fulfillmentIds, err := GetFulfillmentIds(orderNumber, testTenant, AppAuthEncoded, 1)
 	if err != nil {
 		t.Error("Error getting fulfillment id: ", err.Error())
 		return
@@ -246,6 +312,28 @@ func TestDeleteC7_New(t *testing.T) {
 
 }
 
+func Test_GetFulfillments(t *testing.T) {
+
+	orderNumber := 1235
+
+	fulfillments, err := GetFulfillments(orderNumber, testTenant, AppAuthEncoded, 1, nil)
+	if err != nil {
+		t.Error("error getting fulfillments: ", err.Error())
+		return
+	}
+
+	if fulfillments == nil {
+		t.Error("error: fulfillments are nil")
+		return
+	}
+
+	if len(*fulfillments) != 1 {
+		t.Errorf("expected fulfillmentIds length of 1, got: %d", len(*fulfillments))
+		return
+	}
+
+}
+
 func TestFormatDatesForC7(t *testing.T) {
 	testParams := []string{"01/02/2006 15:04", "01/02/2025 15:04", "01/02/2006", ""}
 	expected := []string{"2006-01-02T15:04:00.000Z", "2025-01-02T15:04:00.000Z", "01/02/2006", ""}
@@ -290,7 +378,7 @@ func TestGetFulfillmentId(t *testing.T) {
 	// }
 
 	for i, testCase := range testCases {
-		fulfillmentIds, err := GetFulfillmentId(testCase.orderNumber, testTenant, testCase.auth, 1)
+		fulfillmentIds, err := GetFulfillmentIds(testCase.orderNumber, testTenant, testCase.auth, 1)
 		if err, ok := err.(C7Error); ok {
 			if err.StatusCode != testCase.expectedCode {
 				t.Error("Test case:", i+1, "expected status code:", testCase.expectedCode, "got:", err.StatusCode)
@@ -320,7 +408,7 @@ func Test_MarkNoFulfillmentRequired(t *testing.T) {
 	orderId := "b9f10447-4285-4dc2-add2-b38798dba8f9"
 
 	// Delete previous fulfillment for test
-	fulfillmentIds, err := GetFulfillmentId(orderNumber, testTenant, AppAuthEncoded, 1)
+	fulfillmentIds, err := GetFulfillmentIds(orderNumber, testTenant, AppAuthEncoded, 1)
 	if err != nil {
 		t.Error("Error getting fulfillment id: ", err.Error())
 		return
