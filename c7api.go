@@ -52,7 +52,9 @@ func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAut
 // Basic requests to C7 endpoint wrapped in retry logic with exponential backoff for TooManyRequest responses.
 //
 // Reads out the response body and returns the bytes.
-func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]byte, error) {
+//
+// Min Retry Count: 0 | Max Retry Count: 10
+func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
 	//
 	if url == "" || tenant == "" || c7AppAuthEncoded == "" {
 		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
@@ -62,10 +64,13 @@ func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant 
 		reqBody = &[]byte{}
 	}
 
-	if retryCount < 0 {
-		retryCount = 0
-	} else if retryCount > 10 {
-		retryCount = 10
+	minRetryCount := 0
+	maxRetryCount := 10
+
+	if retryCount < minRetryCount {
+		retryCount = minRetryCount
+	} else if retryCount > maxRetryCount {
+		retryCount = maxRetryCount
 	}
 
 	client := &http.Client{}
@@ -73,6 +78,9 @@ func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant 
 	body := []byte{}
 
 	for i := 0; i <= retryCount; i++ {
+		if rl != nil {
+			rl.Wait()
+		}
 		req, err := http.NewRequest(method, url, bytes.NewBuffer(*reqBody))
 		if err != nil {
 			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
@@ -149,7 +157,7 @@ func GetFulfillmentId(OrderNumber int, tenant string, auth string, attempts int)
 	orderUrl := Endpoints.Order + "?q=" + strconv.Itoa(OrderNumber)
 	fulfillments := []string{}
 	// Get the order from C7
-	ordersBytes, err := RequestWithRetryAndRead("GET", orderUrl, nil, tenant, auth, attempts)
+	ordersBytes, err := RequestWithRetryAndRead("GET", orderUrl, nil, tenant, auth, attempts, nil)
 	if err != nil {
 		return fulfillments, err
 	}
@@ -181,11 +189,11 @@ func GetFulfillmentId(OrderNumber int, tenant string, auth string, attempts int)
 
 }
 
-func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int) (*[]C7OrderFulfillment, error) {
+func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int, rl genericRateLimiter) (*[]C7OrderFulfillment, error) {
 
 	orderUrl := Endpoints.Order + "?q=" + strconv.Itoa(OrderNumber)
 	// Get the order from C7
-	ordersBytes, err := RequestWithRetryAndRead("GET", orderUrl, nil, tenant, auth, attempts)
+	ordersBytes, err := RequestWithRetryAndRead("GET", orderUrl, nil, tenant, auth, attempts, rl)
 	if err != nil {
 		return nil, err
 	}
@@ -213,15 +221,15 @@ func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int) 
 
 }
 
-func DeleteFulfillment(orderId string, fulfillmentId string, tenant string, auth string, attempts int) (*[]byte, error) {
+func DeleteFulfillment(orderId string, fulfillmentId string, tenant string, auth string, attempts int, rl genericRateLimiter) (*[]byte, error) {
 
 	deleteUrl := Endpoints.Order + "/" + orderId + "/fulfillment/" + fulfillmentId
 	// DELETE /order/{:id}/fulfillment/{:id}
-	return RequestWithRetryAndRead("DELETE", deleteUrl, nil, tenant, auth, attempts)
+	return RequestWithRetryAndRead("DELETE", deleteUrl, nil, tenant, auth, attempts, rl)
 
 }
 
-func MarkNoFulfillmentRequired(orderId string, shipTime time.Time, tenant string, auth string, attempts int) error {
+func MarkNoFulfillmentRequired(orderId string, shipTime time.Time, tenant string, auth string, attempts int, rl genericRateLimiter) error {
 	// POST // https://api.commerce7.com/v1/order/b9f10447-4285-4dc2-add2-b38798dba8f9/fulfillment
 
 	// Create new Fulfillment from struct
@@ -239,7 +247,7 @@ func MarkNoFulfillmentRequired(orderId string, shipTime time.Time, tenant string
 	}
 
 	// Post the fulfillment to C7
-	_, err = RequestWithRetryAndRead("POST", url, &fulfillmentJSON, tenant, auth, attempts)
+	_, err = RequestWithRetryAndRead("POST", url, &fulfillmentJSON, tenant, auth, attempts, rl)
 	if err != nil {
 		return errors.New("error posting NFR fulfillment to C7: " + err.Error())
 	}

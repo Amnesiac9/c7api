@@ -19,6 +19,12 @@ var (
 	testTenant = os.Getenv("testTenant")
 )
 
+type rateLimiterMock struct{}
+
+func (rl *rateLimiterMock) Wait() {
+	time.Sleep(1 * time.Millisecond)
+}
+
 func TestGetC7_New(t *testing.T) {
 
 	urlStringOrders := "https://api.commerce7.com/v1/order?orderPaidDate=btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z"
@@ -34,6 +40,7 @@ func TestGetC7_New(t *testing.T) {
 		tenant        string
 		auth          string
 		attempts      int
+		rl            genericRateLimiter
 		expectedCode  int
 		expectedBytes []byte
 	}
@@ -58,6 +65,7 @@ func TestGetC7_New(t *testing.T) {
 			tenant:        tenant,
 			auth:          "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth")),
 			attempts:      0,
+			rl:            &rateLimiterMock{},
 			expectedCode:  401,
 			expectedBytes: nil,
 		},
@@ -67,7 +75,7 @@ func TestGetC7_New(t *testing.T) {
 
 		//t.Log("Test", tc.name)
 
-		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -103,20 +111,21 @@ func TestPostC7_New(t *testing.T) {
 	}`)
 
 	testCases := []struct {
-		name          string
-		method        string
-		url           string
-		body          []byte
-		tenant        string
-		auth          string
-		attempts      int
-		expectedCode  int
-		expectedBytes []byte
+		name               string
+		method             string
+		url                string
+		body               []byte
+		tenant             string
+		auth               string
+		attempts           int
+		rl                 genericRateLimiter
+		expectedStatusCode int
+		expectedBytes      []byte
 	}{
-		{"Good Post", "POST", urlStringFulfillment, goodBytes, tenant, goodAuth, 0, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":"2023-07-30T10:59:32.000Z","orderNumber":1235,`)},
-		{"Bad Auth POST", "POST", urlStringFulfillment, nil, tenant, badAuth, 0, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
-		{"Already Fulfileld POST", "POST", urlStringFulfillment, goodBytes, tenant, goodAuth, 0, 422, []byte(`{"statusCode":422,"type":"validationError","message":"Can not fulfill an order that is marked Fulfilled"}`)},
-		{"Blank POST", "POST", urlStringFulfillment, blankBytes, tenant, goodAuth, 0, 422, []byte(`{"statusCode":422,"type":"validationError","message":"One or more elements is missing or invalid","errors":[{"field":"type","message":"required"},{"field":"fulfillmentDate","message":"required"},{"field":"packageCount","message":"required"}]}`)},
+		{"Good Post", "POST", urlStringFulfillment, goodBytes, tenant, goodAuth, 0, &rateLimiterMock{}, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":"2023-07-30T10:59:32.000Z","orderNumber":1235,`)},
+		{"Bad Auth POST", "POST", urlStringFulfillment, nil, tenant, badAuth, 0, nil, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
+		{"Already Fulfileld POST", "POST", urlStringFulfillment, goodBytes, tenant, goodAuth, 0, nil, 422, []byte(`{"statusCode":422,"type":"validationError","message":"Can not fulfill an order that is marked Fulfilled"}`)},
+		{"Blank POST", "POST", urlStringFulfillment, blankBytes, tenant, goodAuth, 0, nil, 422, []byte(`{"statusCode":422,"type":"validationError","message":"One or more elements is missing or invalid","errors":[{"field":"type","message":"required"},{"field":"fulfillmentDate","message":"required"},{"field":"packageCount","message":"required"}]}`)},
 	}
 
 	// Delete previous fulfillment for test
@@ -129,7 +138,7 @@ func TestPostC7_New(t *testing.T) {
 	for _, id := range fulfillmentIds {
 		//t.Log("Deleting Fulfillment ID: ", id)
 
-		_, err = DeleteFulfillment(orderId, id, testTenant, AppAuthEncoded, 1)
+		_, err = DeleteFulfillment(orderId, id, testTenant, AppAuthEncoded, 1, nil)
 		if err != nil {
 			t.Error("Error deleting fulfillment: ", err.Error())
 			return
@@ -140,9 +149,9 @@ func TestPostC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
-		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
-			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
+		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
+		if err != nil && err.(C7Error).StatusCode != tc.expectedStatusCode {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedStatusCode, " got: ", err.(C7Error).StatusCode)
 		}
 
 		// TODO: Unmarshal these and compare that way to get exact matches.
@@ -201,19 +210,20 @@ func TestDeleteC7_New(t *testing.T) {
 		tenant        string
 		auth          string
 		attempts      int
+		rl            genericRateLimiter
 		expectedCode  int
 		expectedBytes []byte
 	}{
-		{"Good DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":null,"orderNumber":1235,`)},
-		{"Bad Auth DELETE", "DELETE", urlStringDelete, nil, tenant, badAuth, 0, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
-		{"No Fulfillment to DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, 422, []byte(`{"statusCode":422,"type":"processingError","message":"Fulfillment not found"}`)},
+		{"Good DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, &rateLimiterMock{}, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":null,"orderNumber":1235,`)},
+		{"Bad Auth DELETE", "DELETE", urlStringDelete, nil, tenant, badAuth, 0, nil, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
+		{"No Fulfillment to DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, nil, 422, []byte(`{"statusCode":422,"type":"processingError","message":"Fulfillment not found"}`)},
 	}
 
 	for _, tc := range testCases {
 
 		//t.Log("Test", tc.name)
 
-		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts)
+		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -225,10 +235,10 @@ func TestDeleteC7_New(t *testing.T) {
 
 	}
 
-	t.Log("Adding Fulfillment for test TestDeleteC7_New")
+	t.Log("Re-Adding Fulfillment for test TestDeleteC7_New")
 
 	// Post previous fulfillment for test
-	jsonBytes, err := RequestWithRetryAndRead("POST", urlStringFulfillment, &goodBytes, tenant, goodAuth, 1)
+	jsonBytes, err := RequestWithRetryAndRead("POST", urlStringFulfillment, &goodBytes, tenant, goodAuth, 1, nil)
 	if err != nil || jsonBytes == nil {
 		t.Error("Error posting fulfillment: ", err.Error())
 		return
@@ -325,7 +335,7 @@ func Test_MarkNoFulfillmentRequired(t *testing.T) {
 
 	t.Log("Deleting Fulfillment ID: ", fulfillmentId)
 
-	_, err = DeleteFulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1)
+	_, err = DeleteFulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1, nil)
 	if err != nil {
 		t.Error("Error deleting fulfillment: ", err.Error())
 		return
@@ -338,7 +348,7 @@ func Test_MarkNoFulfillmentRequired(t *testing.T) {
 	}
 
 	// Mark no fulfillment required
-	err = MarkNoFulfillmentRequired(orderId, shippedTime, testTenant, AppAuthEncoded, 1)
+	err = MarkNoFulfillmentRequired(orderId, shippedTime, testTenant, AppAuthEncoded, 1, nil)
 	if err != nil {
 		t.Error("Error marking no fulfillment required: ", err.Error())
 		return

@@ -13,6 +13,7 @@ type C7Error struct {
 	Err error
 }
 
+// Prints the value of Err, which is an internal error message, usually including the body of the returned json from C7
 func (e C7Error) Error() string {
 	return fmt.Sprintf("%v", e.Err)
 }
