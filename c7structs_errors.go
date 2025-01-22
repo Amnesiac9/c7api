@@ -1,0 +1,46 @@
+package c7api
+
+import (
+	"fmt"
+)
+
+type C7Error struct {
+	StatusCode int              `json:"statusCode"`
+	Type       string           `json:"type"`
+	Message    string           `json:"message"`
+	Errors     []map[string]any `json:"errors"`
+	// Body       []byte
+	Err error
+}
+
+func (e C7Error) Error() string {
+	return fmt.Sprintf("%v", e.Err)
+}
+
+func (e C7Error) ErrorFull() string {
+	errorString := fmt.Sprintf("status code: %d, type: %s, message: %s, errors:", e.StatusCode, e.Type, e.Message)
+
+	for i, err := range e.Errors {
+		errorString += fmt.Sprintf(" (%d):", i+1)
+		for key, value := range err {
+			errorString += fmt.Sprintf("{ %s: %v }", key, value)
+		}
+	}
+	return errorString
+}
+
+func (e C7Error) ErrorReadable() string {
+	errorString := fmt.Sprintf("status code: %d\ntype: %s\n message: %s\n", e.StatusCode, e.Type, e.Message)
+
+	for i, err := range e.Errors {
+		errorString += fmt.Sprintf("  Error %d:\n", i+1)
+		for key, value := range err {
+			errorString += fmt.Sprintf("    %s: %v\n", key, value)
+		}
+	}
+	return errorString
+}
+
+func (e C7Error) ErrorSimple() string {
+	return fmt.Sprintf("status code: %d, type: %s, message: %s", e.StatusCode, e.Type, e.Message)
+}

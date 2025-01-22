@@ -31,3 +31,5 @@ func GetEndpointsV1() *endpoints {
 		LoyaltyTransaction:   "https://api.commerce7.com/v1/loyalty-transaction",
 	}
 }
+
+var Endpoints = GetEndpointsV1()

@@ -49,7 +49,8 @@ func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAut
 
 }
 
-// Basic requests to C7 endpoint wrapped in retry logic with exponential backoff.
+// Basic requests to C7 endpoint wrapped in retry logic with exponential backoff for TooManyRequest responses.
+//
 // Reads out the response body and returns the bytes.
 func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]byte, error) {
 	//
@@ -93,7 +94,7 @@ func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant 
 		}
 
 		// 200-299 is success, return body and nil error
-		if response.StatusCode >= 200 && response.StatusCode <= 299 {
+		if ResponseIsOK(response.StatusCode) {
 			return &body, nil
 		} else {
 			// Exponential backoff based on retry count
@@ -106,262 +107,31 @@ func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant 
 		}
 	}
 
-	return &body, C7Error{response.StatusCode, errors.New(string(body))}
+	// Read the C7 Error if present
+	// Always return as C7Error after this point, since this means C7 sent an error message.
+	// If we have trouble reading it for some reason, handle that here.
+	c7Error := C7Error{}
+	err := json.Unmarshal(body, &c7Error)
+	if err != nil {
+		c7Error.StatusCode = response.StatusCode
+		c7Error.Err = errors.New("error unmarshalling Commerce7 Error Message: " + err.Error() + "json: " + string(body))
+		return &body, c7Error
+	}
+
+	c7Error.Err = errors.New(string(body))
+	return &body, c7Error
 
 }
 
-// Errors will return a custom error type called C7Error if there is an error directly from C7, calling err.Error() on this will return the error message from C7 and the status code.
+// Takes a date string and formats using time.Parse(layout, date)
 //
-// # Takes in a full URL string and request JSON from C7 and return it as a byte array
+// Example layout to pass in: layout := "01/02/2006 15:04"
 //
-// Attempts to get JSON from C7, if it fails, it will retry the request up to the number of attempts specified. Min 1, Max 10.
-// Will wait 500ms between attempts.
-func GetReq(urlString *string, tenant string, auth string, attempts int) (*[]byte, error) {
-
-	if urlString == nil || tenant == "" || auth == "" {
-		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
-	}
-
-	if attempts < 1 {
-		attempts = 1
-	} else if attempts > 10 {
-		attempts = 10
-	}
-
-	// Make request to C7
-	client := &http.Client{}
-	response := &http.Response{StatusCode: 0}
-	body := []byte{}
-	var i int
-
-	for i = 0; i < attempts; i++ {
-		req, err := http.NewRequest("GET", *urlString, nil)
-		if err != nil {
-			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
-		}
-
-		req.Header.Set("tenant", tenant)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Add("Authorization", auth)
-
-		response, err = client.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("error making GET request to C7: %v", err)
-		}
-
-		// Read the body into variable
-		body, err = io.ReadAll(response.Body)
-		response.Body.Close()
-		if err != nil {
-			return nil, fmt.Errorf("error reading response body from C7: %v", err)
-		}
-
-		// 200-299 is success, return body and nil error
-		if response.StatusCode >= 200 && response.StatusCode <= 299 {
-			return &body, nil
-		} else {
-			// Exponential backoff based on retry count
-			if response.StatusCode == http.StatusTooManyRequests {
-				exponSleepTime := SLEEP_TIME * time.Duration(i)
-				time.Sleep(exponSleepTime)
-			} else {
-				time.Sleep(SLEEP_TIME)
-			}
-		}
-	}
-
-	// Response is not 200, return error
-	return &body, C7Error{response.StatusCode, errors.New(string(body))}
-
-}
-
-// Function to send shipment data back to C7
-// Recieve XML from ShipStation, and post shipment data back to C7 as JSON
-//
-// URL Example: [Your Web Endpoint]?action=shipnotify&order_number=[Order Number]&carrier=[Carrier]&service=&tracking_number=[Tracking Number]
-// URL END POINT]?action=shipnotify&order_number=ABC123&carrier=USPS&service=&tracking_number=9511343223432432432
-func PostReq(urlString *string, reqBody *[]byte, tenant string, auth string, attempts int) (*[]byte, error) {
-
-	if urlString == nil || tenant == "" || reqBody == nil || auth == "" {
-		return nil, fmt.Errorf("error posting JSON to C7: nil value in arguments")
-	}
-
-	if attempts < 1 {
-		attempts = 1
-	} else if attempts > 10 {
-		attempts = 10
-	}
-
-	// Make request to C7
-	client := &http.Client{}
-	response := &http.Response{StatusCode: 0}
-	body := []byte{}
-	var i int
-
-	for i = 0; i < attempts; i++ {
-		// Cannot reuse the same request, need to create a new one each time. (Not sure why, but causes cloudflare issues on C7's end)
-		req, err := http.NewRequest("POST", *urlString, bytes.NewBuffer(*reqBody))
-		if err != nil {
-			return nil, fmt.Errorf("error creating POST request to C7: %v", err)
-		}
-
-		req.Header.Set("tenant", tenant)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Add("Authorization", auth) //AppAuthEncoded
-
-		response, err = client.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("error making POST request to C7: %v", err)
-		}
-
-		// Read the body into variable
-		body, err = io.ReadAll(response.Body)
-		response.Body.Close() // Remove defer when using for loop, close the body each time it is read.
-		if err != nil {
-			return nil, fmt.Errorf("error reading response body from C7: %v", err)
-		}
-
-		// 200-299 is success, return body and nil error
-		if response.StatusCode >= 200 && response.StatusCode <= 299 {
-			return &body, nil
-		} else {
-			// Exponential backoff based on retry count
-			if response.StatusCode == http.StatusTooManyRequests {
-				exponSleepTime := SLEEP_TIME * time.Duration(i)
-				time.Sleep(exponSleepTime)
-			} else {
-				time.Sleep(SLEEP_TIME)
-			}
-		}
-	}
-
-	return &body, C7Error{response.StatusCode, errors.New(string(body))}
-}
-
-func PutReq(urlString *string, reqBody *[]byte, tenant string, auth string, attempts int) (*[]byte, error) {
-	if urlString == nil || reqBody == nil || auth == "" {
-		return nil, fmt.Errorf("error posting JSON to C7: nil or blank value in arguments")
-	}
-
-	if attempts < 1 {
-		attempts = 1
-	} else if attempts > 10 {
-		attempts = 10
-	}
-
-	// Make request to C7
-	client := &http.Client{}
-	response := &http.Response{StatusCode: 0}
-	body := []byte{}
-	var i int
-
-	for i = 0; i < attempts; i++ {
-		// Cannot reuse the same request, need to create a new one each time. (Not sure why, but causes cloudflare issues on C7's end)
-		req, err := http.NewRequest("PUT", *urlString, bytes.NewBuffer(*reqBody))
-		if err != nil {
-			return nil, fmt.Errorf("error creating PUT request to C7: %v", err)
-		}
-
-		req.Header.Set("tenant", tenant)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Add("Authorization", auth) //AppAuthEncoded
-
-		response, err = client.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("error making PUT request to C7: %v", err)
-		}
-
-		// Read the body into variable
-		body, err = io.ReadAll(response.Body)
-		response.Body.Close() // Remove defer when using for loop, close the body each time it is read.
-		if err != nil {
-			return nil, fmt.Errorf("error reading response body from C7: %v", err)
-		}
-
-		// 200-299 is success, return body and nil error
-		if response.StatusCode >= 200 && response.StatusCode <= 299 {
-			return &body, nil
-		} else {
-			// Exponential backoff based on retry count
-			if response.StatusCode == http.StatusTooManyRequests {
-				exponSleepTime := SLEEP_TIME * time.Duration(i)
-				time.Sleep(exponSleepTime)
-			} else {
-				time.Sleep(SLEEP_TIME)
-			}
-		}
-	}
-
-	return &body, C7Error{response.StatusCode, errors.New(string(body))}
-}
-
-func DeleteReq(urlString *string, tenant string, auth string, attempts int) (*[]byte, error) {
-	if urlString == nil || tenant == "" || auth == "" {
-		return nil, fmt.Errorf("nil or blank value in arguments")
-	}
-
-	if attempts < 1 {
-		attempts = 1
-	} else if attempts > 10 {
-		attempts = 10
-	}
-
-	// Make request to C7
-	client := &http.Client{}
-	response := &http.Response{StatusCode: 0}
-	body := []byte{}
-	var i int
-
-	for i = 0; i < attempts; i++ {
-
-		req, err := http.NewRequest("DELETE", *urlString, nil)
-		if err != nil {
-			return nil, fmt.Errorf("while creating DELETE request to C7, got: %v", err)
-		}
-
-		// Set headers
-		req.Header.Set("tenant", tenant)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Add("Authorization", auth) //AppAuthEncoded
-
-		response, err = client.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("while making DELETE request to C7, got: %v", err)
-		}
-
-		// Read the body into variable
-		body, err = io.ReadAll(response.Body)
-		response.Body.Close()
-		if err != nil {
-			return nil, fmt.Errorf("while reading response body from C7, got: %v", err)
-		}
-
-		// C7 docs are lying, they return 200 on success along with the full order object.
-		// 200-299 is success, return body and nil error
-		if response.StatusCode >= 200 && response.StatusCode <= 299 {
-			return &body, nil
-		} else {
-			// Exponential backoff based on retry count
-			if response.StatusCode == http.StatusTooManyRequests {
-				exponSleepTime := SLEEP_TIME * time.Duration(i)
-				time.Sleep(exponSleepTime)
-			} else {
-				time.Sleep(SLEEP_TIME)
-			}
-		}
-	}
-
-	// Response is not 200 or 201, return error
-	return &body, C7Error{response.StatusCode, errors.New(string(body))}
-
-}
-
-func FormatDatesForC7(date string) (string, error) {
+// Returns the required format for the API: "2006-01-02T15:04:05.000Z"
+func FormatDatesForC7(layout string, date string) (string, error) {
 	if date == "" {
 		return date, errors.New("date is empty")
 	}
-
-	layout := "01/02/2006 15:04"
 
 	dateFormatted, err := time.Parse(layout, date)
 	if err != nil {
@@ -371,44 +141,51 @@ func FormatDatesForC7(date string) (string, error) {
 	return dateFormatted.Format("2006-01-02T15:04:05.000Z"), err
 }
 
-func GetFulfillmentId(OrderNumber int, tenant string, auth string, attempts int) (string, error) {
+// Returns the fulfillment ids if there is any fulfillments on a C7 order.
+//
+// Usually this will return just one, but can return multiple if there are partial fulfillments or errors with C7.
+func GetFulfillmentId(OrderNumber int, tenant string, auth string, attempts int) ([]string, error) {
 
-	orderUrl := "https://api.commerce7.com/v1/order?q=" + strconv.Itoa(OrderNumber)
+	orderUrl := Endpoints.Order + "?q=" + strconv.Itoa(OrderNumber)
+	fulfillments := []string{}
 	// Get the order from C7
-	ordersBytes, err := GetReq(&orderUrl, tenant, auth, attempts)
+	ordersBytes, err := RequestWithRetryAndRead("GET", orderUrl, nil, tenant, auth, attempts)
 	if err != nil {
-		return "", err
+		return fulfillments, err
 	}
 
 	// Unmarshal the order
 	var orders C7OrdersFulfillmentsOnly
 	err = json.Unmarshal(*ordersBytes, &orders)
 	if err != nil {
-		return "", err
+		return fulfillments, err
 	}
 
 	// Get the fulfillment ID
 	if len(orders.Orders) == 0 {
-		return "", errors.New("no orders found")
+		return fulfillments, errors.New("no orders found")
 	}
 	if len(orders.Orders[0].Fulfillments) == 0 {
-		return "", errors.New("no fulfillments found")
+		return fulfillments, errors.New("no fulfillments found")
 	}
 	for _, order := range orders.Orders {
 		if order.OrderNumber == OrderNumber {
-			// fulfillments are always an array of len 1 in C7.
-			return order.Fulfillments[0].ID, nil
+			// fulfillments are always an array of len 1 in C7 unless there were multiple fulfillments that are still valid.
+			for _, fulfillment := range order.Fulfillments {
+				fulfillments = append(fulfillments, fulfillment.ID)
+			}
+			return fulfillments, nil
 		}
 	}
-	return "", errors.New("no matching order found")
+	return fulfillments, errors.New("no matching order found")
 
 }
 
 func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int) (*[]C7OrderFulfillment, error) {
 
-	orderUrl := "https://api.commerce7.com/v1/order?q=" + strconv.Itoa(OrderNumber)
+	orderUrl := Endpoints.Order + "?q=" + strconv.Itoa(OrderNumber)
 	// Get the order from C7
-	ordersBytes, err := GetReq(&orderUrl, tenant, auth, attempts)
+	ordersBytes, err := RequestWithRetryAndRead("GET", orderUrl, nil, tenant, auth, attempts)
 	if err != nil {
 		return nil, err
 	}
@@ -438,9 +215,9 @@ func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int) 
 
 func DeleteFulfillment(orderId string, fulfillmentId string, tenant string, auth string, attempts int) (*[]byte, error) {
 
-	deleteUrl := "https://api.commerce7.com/v1/order/" + orderId + "/fulfillment/" + fulfillmentId
+	deleteUrl := Endpoints.Order + "/" + orderId + "/fulfillment/" + fulfillmentId
 	// DELETE /order/{:id}/fulfillment/{:id}
-	return DeleteReq(&deleteUrl, tenant, auth, attempts)
+	return RequestWithRetryAndRead("DELETE", deleteUrl, nil, tenant, auth, attempts)
 
 }
 
