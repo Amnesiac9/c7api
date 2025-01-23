@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -78,7 +79,7 @@ func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant 
 	body := []byte{}
 
 	for i := 0; i <= retryCount; i++ {
-		if rl != nil {
+		if rl != nil && !reflect.ValueOf(rl).IsNil() {
 			rl.Wait()
 		}
 		req, err := http.NewRequest(method, url, bytes.NewBuffer(*reqBody))
