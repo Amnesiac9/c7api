@@ -153,7 +153,7 @@ func FormatDatesForC7(layout string, date string) (string, error) {
 // Returns the fulfillment ids if there is any fulfillments on a C7 order.
 //
 // Usually this will return just one, but can return multiple if there are partial fulfillments or errors with C7.
-func GetFulfillmentIds(OrderNumber int, tenant string, auth string, attempts int) ([]string, error) {
+func GetFulfillmentIds(OrderNumber int, tenant string, auth string, attempts int, rl *genericRateLimiter) ([]string, error) {
 
 	orderUrl := Endpoints.Order + "?q=" + strconv.Itoa(OrderNumber)
 	fulfillments := []string{}

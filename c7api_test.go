@@ -195,7 +195,7 @@ func TestPostC7_New(t *testing.T) {
 	}
 
 	// Delete previous fulfillment for test
-	fulfillmentIds, err := GetFulfillmentIds(orderNumber, testTenant, AppAuthEncoded, 1)
+	fulfillmentIds, err := GetFulfillmentIds(orderNumber, testTenant, AppAuthEncoded, 1, nil)
 	if err != nil {
 		t.Error("Error getting fulfillment id: ", err.Error())
 		return
@@ -251,7 +251,7 @@ func TestDeleteC7_New(t *testing.T) {
 		"packageCount": 1
 	}`)
 
-	fulfillmentIds, err := GetFulfillmentIds(orderNumber, testTenant, AppAuthEncoded, 1)
+	fulfillmentIds, err := GetFulfillmentIds(orderNumber, testTenant, AppAuthEncoded, 1, nil)
 	if err != nil {
 		t.Error("Error getting fulfillment id: ", err.Error())
 		return
@@ -378,7 +378,7 @@ func TestGetFulfillmentId(t *testing.T) {
 	// }
 
 	for i, testCase := range testCases {
-		fulfillmentIds, err := GetFulfillmentIds(testCase.orderNumber, testTenant, testCase.auth, 1)
+		fulfillmentIds, err := GetFulfillmentIds(testCase.orderNumber, testTenant, testCase.auth, 1, nil)
 		if err, ok := err.(C7Error); ok {
 			if err.StatusCode != testCase.expectedCode {
 				t.Error("Test case:", i+1, "expected status code:", testCase.expectedCode, "got:", err.StatusCode)
@@ -408,7 +408,7 @@ func Test_MarkNoFulfillmentRequired(t *testing.T) {
 	orderId := "b9f10447-4285-4dc2-add2-b38798dba8f9"
 
 	// Delete previous fulfillment for test
-	fulfillmentIds, err := GetFulfillmentIds(orderNumber, testTenant, AppAuthEncoded, 1)
+	fulfillmentIds, err := GetFulfillmentIds(orderNumber, testTenant, AppAuthEncoded, 1, nil)
 	if err != nil {
 		t.Error("Error getting fulfillment id: ", err.Error())
 		return
