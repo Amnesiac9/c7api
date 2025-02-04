@@ -19,6 +19,11 @@ type C7Orders struct {
 	Total  int       `json:"total"`
 }
 
+type C7Order_OrderNumberOnly struct {
+	ID          string `json:"id"`
+	OrderNumber int    `json:"orderNumber"`
+}
+
 type C7Order struct {
 	//AdditionalData any `json:"additionalData"`
 	//AppData        any `json:"appData"`

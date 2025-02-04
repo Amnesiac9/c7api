@@ -239,7 +239,7 @@ func MarkNoFulfillmentRequired(orderId string, shipTime time.Time, tenant string
 	fulfillment.Type = "No Fulfillment Required"
 	fulfillment.FulfillmentDate = shipTime
 
-	url := "https://api.commerce7.com/v1/order/" + orderId + "/fulfillment/all"
+	url := Endpoints.Order + "/" + orderId + "/fulfillment/all"
 
 	// Convert Fulfillment struct to JSON
 	fulfillmentJSON, err := json.Marshal(fulfillment)
@@ -254,6 +254,23 @@ func MarkNoFulfillmentRequired(orderId string, shipTime time.Time, tenant string
 	}
 
 	return nil
+}
+
+func GetOrderNumberFromId(orderId string, tenant string, auth string, attempts int, rl genericRateLimiter) (int, error) {
+	url := Endpoints.Order + "/" + orderId
+	resp, err := RequestWithRetryAndRead("GET", url, nil, tenant, auth, attempts, rl)
+	if err != nil {
+		return -1, err
+	}
+
+	c7Order := C7Order_OrderNumberOnly{}
+	err = json.Unmarshal(*resp, &c7Order)
+	if err != nil {
+		return -1, err
+	}
+
+	return c7Order.OrderNumber, nil
+
 }
 
 func IsCarrierSupported(carrier string) bool {
