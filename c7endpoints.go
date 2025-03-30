@@ -14,7 +14,7 @@ type endpoints struct {
 	Tag                  string // "https://api.commerce7.com/v1/tag" - example: https://api.commerce7.com/v1/tag/customer?q=&type=Manual - Use q to search for specific keywords, type manual to get only manually applied tags
 	LoyaltyTransaction   string // "https://api.commerce7.com/v1/loyalty-transaction" - requires Commerce7 Loyalty Extension https://documentation.commerce7.com/loyalty-feature-overview
 	Vendor               string // "https://api.commerce7.com/v1/vendor" - example: https://api.commerce7.com/v1/vendor?q=myvendor
-	Collection           string // "https://api.commerce7.com/v1/collection" - example: https://api.commerce7.com/v1/collection?type=Manual
+	Collections          string // "https://api.commerce7.com/v1/collection" - example: https://api.commerce7.com/v1/collection?type=Manual
 	Department           string // "https://api.commerce7.com/v1/department" - example: https://api.commerce7.com/v1/department?q=wine
 }
 
@@ -33,7 +33,7 @@ func GetEndpointsV1() *endpoints {
 		Tag:                  "https://api.commerce7.com/v1/tag",
 		LoyaltyTransaction:   "https://api.commerce7.com/v1/loyalty-transaction",
 		Vendor:               "https://api.commerce7.com/v1/vendor",
-		Collection:           "https://api.commerce7.com/v1/collection",
+		Collections:          "https://api.commerce7.com/v1/collection",
 		Department:           "https://api.commerce7.com/v1/department",
 	}
 }
