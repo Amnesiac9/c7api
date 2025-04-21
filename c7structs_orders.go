@@ -303,6 +303,7 @@ type C7Order struct {
 	RefundOrderID     string `json:"refundOrderId"`
 	RefundOrderNumber int    `json:"refundOrderNumber"`
 	//Reservation       string   `json:"reservation"`
+	SalesAttributeCode string `json:"salesAttributeCode,omitempty"`
 	// SalesAssociate    struct {
 	// 	AccountID string `json:"accountId"`
 	// 	Name      string `json:"name"`

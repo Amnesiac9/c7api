@@ -273,6 +273,21 @@ func GetOrderNumberFromId(orderId string, tenant string, auth string, attempts i
 
 }
 
+func GetOrderFromId(orderId string, tenant string, auth string, attempts int, rl genericRateLimiter) (*C7Order, error) {
+	url := Endpoints.Order + "/" + orderId
+	resp, err := RequestWithRetryAndRead("GET", url, nil, tenant, auth, attempts, rl)
+	if err != nil {
+		return nil, err
+	}
+
+	c7Order := C7Order{}
+	err = json.Unmarshal(*resp, &c7Order)
+	if err != nil {
+		return nil, err
+	}
+	return &c7Order, nil
+}
+
 func IsCarrierSupported(carrier string) bool {
 	switch strings.ToUpper(carrier) {
 	case "UPS":
