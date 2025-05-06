@@ -93,7 +93,10 @@ func TestGetC7_Request(t *testing.T) {
 
 func TestGetC7_New(t *testing.T) {
 
-	urlStringOrders := "https://api.commerce7.com/v1/order?orderPaidDate=btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z"
+	urlStringOrders := "https://api.commerce7.com/v1/order"
+	queries := map[string]string{
+		"orderPaidDate": "btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z",
+	}
 	tenant := testTenant
 	goodAuth := AppAuthEncoded
 	//badAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth"))
@@ -141,9 +144,13 @@ func TestGetC7_New(t *testing.T) {
 
 		//t.Log("Test", tc.name)
 
-		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
-		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
-			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
+		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, queries, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
+		if err != nil {
+			if c7err, ok := err.(C7Error); ok && c7err.StatusCode != tc.expectedCode {
+				t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", c7err.StatusCode)
+			} else {
+				t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.Error())
+			}
 		}
 
 		if tc.expectedBytes != nil && string(*jsonBytes) != string(tc.expectedBytes) {
@@ -204,7 +211,7 @@ func TestPostC7_New(t *testing.T) {
 	for _, id := range fulfillmentIds {
 		//t.Log("Deleting Fulfillment ID: ", id)
 
-		_, err = DeleteFulfillment(orderId, id, testTenant, AppAuthEncoded, 1, nil)
+		_, err = DeleteFulfillmentById(orderId, id, testTenant, AppAuthEncoded, 1, nil)
 		if err != nil {
 			t.Error("Error deleting fulfillment: ", err.Error())
 			return
@@ -215,7 +222,7 @@ func TestPostC7_New(t *testing.T) {
 
 		t.Log("Test", tc.name)
 
-		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
+		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, nil, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedStatusCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedStatusCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -289,7 +296,7 @@ func TestDeleteC7_New(t *testing.T) {
 
 		//t.Log("Test", tc.name)
 
-		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
+		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, nil, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
 		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
 			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
 		}
@@ -304,7 +311,7 @@ func TestDeleteC7_New(t *testing.T) {
 	t.Log("Re-Adding Fulfillment for test TestDeleteC7_New")
 
 	// Post previous fulfillment for test
-	jsonBytes, err := RequestWithRetryAndRead("POST", urlStringFulfillment, &goodBytes, tenant, goodAuth, 1, nil)
+	jsonBytes, err := RequestWithRetryAndRead("POST", urlStringFulfillment, nil, &goodBytes, tenant, goodAuth, 1, nil)
 	if err != nil || jsonBytes == nil {
 		t.Error("Error posting fulfillment: ", err.Error())
 		return
@@ -316,7 +323,7 @@ func Test_GetFulfillments(t *testing.T) {
 
 	orderNumber := 1235
 
-	fulfillments, err := GetFulfillments(orderNumber, testTenant, AppAuthEncoded, 1, nil)
+	fulfillments, err := GetFulfillmentsByOrderNumber(orderNumber, testTenant, AppAuthEncoded, 1, nil)
 	if err != nil {
 		t.Error("error getting fulfillments: ", err.Error())
 		return
@@ -423,7 +430,7 @@ func Test_MarkNoFulfillmentRequired(t *testing.T) {
 
 	t.Log("Deleting Fulfillment ID: ", fulfillmentId)
 
-	_, err = DeleteFulfillment(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1, nil)
+	_, err = DeleteFulfillmentById(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1, nil)
 	if err != nil {
 		t.Error("Error deleting fulfillment: ", err.Error())
 		return

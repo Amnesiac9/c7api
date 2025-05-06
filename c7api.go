@@ -165,7 +165,7 @@ func GetFulfillmentIds(OrderNumber int, tenant string, auth string, attempts int
 	orderUrl := Endpoints.Order + "?q=" + strconv.Itoa(OrderNumber)
 	fulfillments := []string{}
 	// Get the order from C7
-	ordersBytes, err := RequestWithRetryAndRead("GET", orderUrl, nil, tenant, auth, attempts, rl)
+	ordersBytes, err := RequestWithRetryAndRead("GET", orderUrl, nil, nil, tenant, auth, attempts, rl)
 	if err != nil {
 		return fulfillments, err
 	}
@@ -197,11 +197,11 @@ func GetFulfillmentIds(OrderNumber int, tenant string, auth string, attempts int
 
 }
 
-func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int, rl genericRateLimiter) (*[]C7OrderFulfillment, error) {
+func GetFulfillmentsByOrderNumber(OrderNumber int, tenant string, auth string, attempts int, rl genericRateLimiter) (*[]C7OrderFulfillment, error) {
 
 	orderUrl := Endpoints.Order + "?q=" + strconv.Itoa(OrderNumber)
 	// Get the order from C7
-	ordersBytes, err := RequestWithRetryAndRead("GET", orderUrl, nil, tenant, auth, attempts, rl)
+	ordersBytes, err := RequestWithRetryAndRead("GET", orderUrl, nil, nil, tenant, auth, attempts, rl)
 	if err != nil {
 		return nil, err
 	}
@@ -229,11 +229,11 @@ func GetFulfillments(OrderNumber int, tenant string, auth string, attempts int, 
 
 }
 
-func DeleteFulfillment(orderId string, fulfillmentId string, tenant string, auth string, attempts int, rl genericRateLimiter) (*[]byte, error) {
+func DeleteFulfillmentById(orderId string, fulfillmentId string, tenant string, auth string, attempts int, rl genericRateLimiter) (*[]byte, error) {
 
 	deleteUrl := Endpoints.Order + "/" + orderId + "/fulfillment/" + fulfillmentId
 	// DELETE /order/{:id}/fulfillment/{:id}
-	return RequestWithRetryAndRead("DELETE", deleteUrl, nil, tenant, auth, attempts, rl)
+	return RequestWithRetryAndRead("DELETE", deleteUrl, nil, nil, tenant, auth, attempts, rl)
 
 }
 
@@ -255,7 +255,7 @@ func MarkNoFulfillmentRequired(orderId string, shipTime time.Time, tenant string
 	}
 
 	// Post the fulfillment to C7
-	_, err = RequestWithRetryAndRead("POST", url, &fulfillmentJSON, tenant, auth, attempts, rl)
+	_, err = RequestWithRetryAndRead("POST", url, nil, &fulfillmentJSON, tenant, auth, attempts, rl)
 	if err != nil {
 		return errors.New("error posting NFR fulfillment to C7: " + err.Error())
 	}
@@ -265,7 +265,7 @@ func MarkNoFulfillmentRequired(orderId string, shipTime time.Time, tenant string
 
 func GetOrderNumberFromId(orderId string, tenant string, auth string, attempts int, rl genericRateLimiter) (int, error) {
 	url := Endpoints.Order + "/" + orderId
-	resp, err := RequestWithRetryAndRead("GET", url, nil, tenant, auth, attempts, rl)
+	resp, err := RequestWithRetryAndRead("GET", url, nil, nil, tenant, auth, attempts, rl)
 	if err != nil {
 		return -1, err
 	}
@@ -282,7 +282,7 @@ func GetOrderNumberFromId(orderId string, tenant string, auth string, attempts i
 
 func GetOrderFromId(orderId string, tenant string, auth string, attempts int, rl genericRateLimiter) (*C7Order, error) {
 	url := Endpoints.Order + "/" + orderId
-	resp, err := RequestWithRetryAndRead("GET", url, nil, tenant, auth, attempts, rl)
+	resp, err := RequestWithRetryAndRead("GET", url, nil, nil, tenant, auth, attempts, rl)
 	if err != nil {
 		return nil, err
 	}
