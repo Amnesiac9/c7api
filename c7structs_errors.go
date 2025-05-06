@@ -14,11 +14,11 @@ type C7Error struct {
 }
 
 // Prints the value of Err, which is an internal error message, usually including the body of the returned json from C7
-func (e C7Error) Error() string {
-	return fmt.Sprintf("%v", e.Err)
+func (e *C7Error) Error() string {
+	return e.Err.Error()
 }
 
-func (e C7Error) ErrorFull() string {
+func (e *C7Error) ErrorFull() string {
 	errorString := fmt.Sprintf("status code: %d, type: %s, message: %s, errors:", e.StatusCode, e.Type, e.Message)
 
 	for i, err := range e.Errors {
@@ -30,7 +30,7 @@ func (e C7Error) ErrorFull() string {
 	return errorString
 }
 
-func (e C7Error) ErrorReadable() string {
+func (e *C7Error) ErrorReadable() string {
 	errorString := fmt.Sprintf("status code: %d\ntype: %s\n message: %s\n", e.StatusCode, e.Type, e.Message)
 
 	for i, err := range e.Errors {
@@ -42,6 +42,6 @@ func (e C7Error) ErrorReadable() string {
 	return errorString
 }
 
-func (e C7Error) ErrorSimple() string {
+func (e *C7Error) ErrorSimple() string {
 	return fmt.Sprintf("status code: %d, type: %s, message: %s", e.StatusCode, e.Type, e.Message)
 }

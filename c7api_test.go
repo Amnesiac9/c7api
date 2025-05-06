@@ -146,10 +146,14 @@ func TestGetC7_New(t *testing.T) {
 
 		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, queries, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
 		if err != nil {
-			if c7err, ok := err.(C7Error); ok && c7err.StatusCode != tc.expectedCode {
-				t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", c7err.StatusCode)
+			if c7err, ok := err.(*C7Error); ok {
+				if c7err.StatusCode != tc.expectedCode {
+					t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", c7err.StatusCode)
+					return
+				}
 			} else {
 				t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.Error())
+				return
 			}
 		}
 
@@ -223,8 +227,8 @@ func TestPostC7_New(t *testing.T) {
 		t.Log("Test", tc.name)
 
 		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, nil, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
-		if err != nil && err.(C7Error).StatusCode != tc.expectedStatusCode {
-			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedStatusCode, " got: ", err.(C7Error).StatusCode)
+		if err != nil && err.(*C7Error).StatusCode != tc.expectedStatusCode {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedStatusCode, " got: ", err.(*C7Error).StatusCode)
 		}
 
 		// TODO: Unmarshal these and compare that way to get exact matches.
@@ -297,8 +301,8 @@ func TestDeleteC7_New(t *testing.T) {
 		//t.Log("Test", tc.name)
 
 		jsonBytes, err := RequestWithRetryAndRead(tc.method, tc.url, nil, &tc.body, tc.tenant, tc.auth, tc.attempts, tc.rl)
-		if err != nil && err.(C7Error).StatusCode != tc.expectedCode {
-			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(C7Error).StatusCode)
+		if err != nil && err.(*C7Error).StatusCode != tc.expectedCode {
+			t.Error("TestGetJSONFromC7, test case: ", tc.name, " Expected status code: ", tc.expectedCode, " got: ", err.(*C7Error).StatusCode)
 		}
 
 		if tc.expectedBytes != nil && string(*jsonBytes)[:50] != string(tc.expectedBytes)[:50] {
@@ -386,7 +390,7 @@ func TestGetFulfillmentId(t *testing.T) {
 
 	for i, testCase := range testCases {
 		fulfillmentIds, err := GetFulfillmentIds(testCase.orderNumber, testTenant, testCase.auth, 1, nil)
-		if err, ok := err.(C7Error); ok {
+		if err, ok := err.(*C7Error); ok {
 			if err.StatusCode != testCase.expectedCode {
 				t.Error("Test case:", i+1, "expected status code:", testCase.expectedCode, "got:", err.StatusCode)
 				return

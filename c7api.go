@@ -132,11 +132,12 @@ func RequestWithRetryAndRead(method string, url string, queries map[string]strin
 	if err != nil {
 		c7Error.StatusCode = response.StatusCode
 		c7Error.Err = errors.New("error unmarshalling Commerce7 Error Message: " + err.Error() + "json: " + string(body))
-		return &body, c7Error
+		return &body, &c7Error
 	}
 
+	// Add the raw json body to the err as well in case needed.
 	c7Error.Err = errors.New(string(body))
-	return &body, c7Error
+	return &body, &c7Error
 }
 
 // Takes a date string and formats using time.Parse(layout, date)

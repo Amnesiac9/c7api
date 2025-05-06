@@ -1,5 +1,7 @@
 package c7api
 
+const API_BASE_URL = "https://api.commerce7.com/v1"
+
 type endpoints struct {
 	Auth                 string // "https://api.commerce7.com/v1/account/user" - https://developer.commerce7.com/docs/commerce7-apis
 	Cart                 string // "https://api.commerce7.com/v1/cart" - https://developer.commerce7.com/docs/orders
@@ -12,6 +14,7 @@ type endpoints struct {
 	Order                string // "https://api.commerce7.com/v1/order" - https://developer.commerce7.com/docs/orders
 	Product              string // "https://api.commerce7.com/v1/product" - https://developer.commerce7.com/docs/products
 	Tag                  string // "https://api.commerce7.com/v1/tag" - example: https://api.commerce7.com/v1/tag/customer?q=&type=Manual - Use q to search for specific keywords, type manual to get only manually applied tags
+	TagXObject           string // https://api.commerce7.com/v1/tag-x-object/{:obj} - Requires an object appended, either customer or order
 	LoyaltyTransaction   string // "https://api.commerce7.com/v1/loyalty-transaction" - requires Commerce7 Loyalty Extension https://documentation.commerce7.com/loyalty-feature-overview
 	Vendor               string // "https://api.commerce7.com/v1/vendor" - example: https://api.commerce7.com/v1/vendor?q=myvendor
 	Collections          string // "https://api.commerce7.com/v1/collection" - example: https://api.commerce7.com/v1/collection?type=Manual
@@ -20,21 +23,22 @@ type endpoints struct {
 
 func GetEndpointsV1() *endpoints {
 	return &endpoints{
-		Auth:                 "https://api.commerce7.com/v1/account/user",
-		Cart:                 "https://api.commerce7.com/v1/cart",
-		Customer:             "https://api.commerce7.com/v1/customer",
-		CustomerId:           "https://api.commerce7.com/v1/customer/{:id}",
-		FulfillmentAll:       "https://api.commerce7.com/v1/order/{:id}/fulfillment/all",
-		Fulfillment:          "https://api.commerce7.com/v1/order/{:id}/fulfillment",
-		Inventory:            "https://api.commerce7.com/v1/inventory",
-		InventoryTransaction: "https://api.commerce7.com/v1/inventory-transaction",
-		Order:                "https://api.commerce7.com/v1/order",
-		Product:              "https://api.commerce7.com/v1/product",
-		Tag:                  "https://api.commerce7.com/v1/tag",
-		LoyaltyTransaction:   "https://api.commerce7.com/v1/loyalty-transaction",
-		Vendor:               "https://api.commerce7.com/v1/vendor",
-		Collections:          "https://api.commerce7.com/v1/collection",
-		Department:           "https://api.commerce7.com/v1/department",
+		Auth:                 API_BASE_URL + "/account/user",
+		Cart:                 API_BASE_URL + "/cart",
+		Customer:             API_BASE_URL + "/customer",
+		CustomerId:           API_BASE_URL + "/customer/{:id}",
+		FulfillmentAll:       API_BASE_URL + "/order/{:id}/fulfillment/all",
+		Fulfillment:          API_BASE_URL + "/order/{:id}/fulfillment",
+		Inventory:            API_BASE_URL + "/inventory",
+		InventoryTransaction: API_BASE_URL + "/inventory-transaction",
+		Order:                API_BASE_URL + "/order",
+		Product:              API_BASE_URL + "/product",
+		Tag:                  API_BASE_URL + "/tag",
+		TagXObject:           API_BASE_URL + "/tag-x-object/{:obj}",
+		LoyaltyTransaction:   API_BASE_URL + "/loyalty-transaction",
+		Vendor:               API_BASE_URL + "/vendor",
+		Collections:          API_BASE_URL + "/collection",
+		Department:           API_BASE_URL + "/department",
 	}
 }
 
