@@ -55,7 +55,7 @@ func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAut
 // Reads out the response body and returns the bytes.
 //
 // Min Retry Count: 0 | Max Retry Count: 10
-func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
+func RequestWithRetryAndRead(method string, url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
 	//
 	if url == "" || tenant == "" || c7AppAuthEncoded == "" {
 		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
@@ -85,6 +85,14 @@ func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant 
 		req, err := http.NewRequest(method, url, bytes.NewBuffer(*reqBody))
 		if err != nil {
 			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
+		}
+
+		if queries != nil {
+			query := req.URL.Query()
+			for k, v := range queries {
+				query.Add(k, v)
+			}
+			req.URL.RawQuery = query.Encode()
 		}
 
 		req.Header.Set("tenant", tenant)
@@ -129,7 +137,6 @@ func RequestWithRetryAndRead(method string, url string, reqBody *[]byte, tenant 
 
 	c7Error.Err = errors.New(string(body))
 	return &body, c7Error
-
 }
 
 // Takes a date string and formats using time.Parse(layout, date)
