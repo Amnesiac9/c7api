@@ -15,16 +15,19 @@ type FulfillmentAllItems struct {
 	PackageCount int `json:"packageCount"`
 }
 
-type NewUser struct {
-	TenantID   string `json:"tenantId"`
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	TimeZone   string `json:"timeZone"`
-	WeightUnit string `json:"weightUnit"`
-	User       struct {
-		UserID    string `json:"id"`
-		FirstName string `json:"firstName"`
-		LastName  string `json:"lastName"`
-		Email     string `json:"email"`
-	} `json:"user"`
+// Struct to return as response to C7 Order Details Page
+//
+//	{
+//		   "icon": url of icon on their server,
+//		   "subTitle": "",
+//		   "footer": "",
+//		   "title": "",
+//		   "variant": null [null, 'success', 'warning', 'error']
+//	   }
+type OrderDetailsStatusCard struct {
+	Icon     string `json:"icon"`
+	SubTitle string `json:"subTitle"`
+	Footer   string `json:"footer"`
+	Title    string `json:"title"`
+	Variant  string `json:"variant,omitempty"` // Can be null, "success", "warning", or "error"
 }
