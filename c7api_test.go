@@ -479,3 +479,81 @@ func Test_IsCarrierSupported(t *testing.T) {
 		}
 	}
 }
+
+func TestGetOrderNumberFromId(t *testing.T) {
+	tests := []struct {
+		name      string
+		orderId   string
+		want      int
+		expectErr bool
+	}{
+		{
+			name:      "valid order",
+			orderId:   "ac7f35d1-5277-4837-9636-1388a64c8057",
+			want:      1002,
+			expectErr: false,
+		},
+		{
+			name:      "invalid order",
+			orderId:   "invalidId",
+			want:      -1,
+			expectErr: true,
+		},
+	}
+
+	rl := rateLimiterMock{}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := GetOrderNumberFromId(tc.orderId, testTenant, AppAuthEncoded, 1, &rl)
+			if (err != nil) != tc.expectErr {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tc.want && !tc.expectErr {
+				t.Errorf("got %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestGetOrderFromId(t *testing.T) {
+	tests := []struct {
+		name                string
+		orderId             string
+		expectErr           bool
+		expectedOrderNumber int
+	}{
+		{
+			name:                "valid order ID",
+			orderId:             "ac7f35d1-5277-4837-9636-1388a64c8057",
+			expectErr:           false,
+			expectedOrderNumber: 1002,
+		},
+		{
+			name:      "invalid order ID",
+			orderId:   "invalidId",
+			expectErr: true,
+		},
+	}
+
+	rl := rateLimiterMock{}
+
+	for _, tc := range tests {
+
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := GetOrderFromId[C7Order](tc.orderId, testTenant, AppAuthEncoded, 1, &rl)
+			if (err != nil) != tc.expectErr {
+				t.Fatalf("unexpected error: %v", err)
+				return
+			}
+			if got == nil && !tc.expectErr {
+				t.Fatalf("unexpected payload is nil")
+				return
+			}
+			if !tc.expectErr && got.OrderNumber != tc.expectedOrderNumber {
+				t.Errorf("got %+v, want %+v", got.OrderNumber, tc.expectedOrderNumber)
+				return
+			}
+		})
+	}
+}
