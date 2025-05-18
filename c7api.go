@@ -281,19 +281,19 @@ func GetOrderNumberFromId(orderId string, tenant string, auth string, attempts i
 
 }
 
-func GetOrderFromId(orderId string, tenant string, auth string, attempts int, rl genericRateLimiter) (*C7Order, error) {
+func GetOrderFromId[T any](orderId string, tenant string, auth string, attempts int, rl genericRateLimiter) (*T, error) {
 	url := Endpoints.Order + "/" + orderId
 	resp, err := RequestWithRetryAndRead("GET", url, nil, nil, tenant, auth, attempts, rl)
 	if err != nil {
 		return nil, err
 	}
 
-	c7Order := C7Order{}
-	err = json.Unmarshal(*resp, &c7Order)
+	var result T
+	err = json.Unmarshal(*resp, &result)
 	if err != nil {
 		return nil, err
 	}
-	return &c7Order, nil
+	return &result, nil
 }
 
 func IsCarrierSupported(carrier string) bool {
