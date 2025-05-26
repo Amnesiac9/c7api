@@ -19,6 +19,8 @@ func GetCustomerByEmail[T HasEmails](email string, tenant string, c7AppAuthEncod
 
 	reqUrl := Endpoints.Customer
 
+	email = strings.ToLower(email)
+
 	// Query for the email
 	quieries := map[string]string{
 		"q": email,
@@ -36,7 +38,7 @@ func GetCustomerByEmail[T HasEmails](email string, tenant string, c7AppAuthEncod
 
 	for _, customer := range c7Customers.Customers {
 		for _, e := range customer.GetEmails() {
-			if strings.ToLower(e.Email) != email {
+			if strings.ToLower(e.Email) == email {
 				return &customer, nil
 			}
 		}
