@@ -12,6 +12,16 @@ type Customer struct {
 	Birthdate string `json:"birthDate"`
 }
 
+type CustomerBasicInfo struct {
+	Id        string `json:"id"`
+	Firstname string `json:"firstName"`
+	Lastname  string `json:"lastName"`
+	Birthdate string `json:"birthDate"`
+	CustomerAddress
+	Emails           []Email          `json:"emails"`
+	OrderInformation OrderInformation `json:"orderInformation"`
+}
+
 type CustomerAddress struct {
 	City        string `json:"city"`
 	Statecode   string `json:"stateCode"`
