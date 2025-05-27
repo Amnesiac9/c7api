@@ -136,6 +136,7 @@ func RequestWithRetryAndRead(method string, url string, queries map[string]strin
 	}
 
 	// Add the raw json body to the err as well in case needed.
+	// TODO: Handle this better to allow slog nested json...
 	c7Error.Err = errors.New(string(body))
 	return &body, &c7Error
 }
