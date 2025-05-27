@@ -1,7 +1,9 @@
 package c7api
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 type C7Error struct {
@@ -44,4 +46,32 @@ func (e *C7Error) ErrorReadable() string {
 
 func (e *C7Error) ErrorSimple() string {
 	return fmt.Sprintf("status code: %d, type: %s, message: %s", e.StatusCode, e.Type, e.Message)
+}
+
+func (e *C7Error) UnmarshalJSON(data []byte) error {
+	type Alias C7Error // Prevent recursion
+	aux := &struct {
+		StatusCode any `json:"statusCode"` // Accepts int or string
+		*Alias
+	}{
+		Alias: (*Alias)(e),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Convert statusCode to string
+	switch v := aux.StatusCode.(type) {
+	case int:
+		e.StatusCode = v
+	case string:
+		var err error
+		if e.StatusCode, err = strconv.Atoi(v); err != nil {
+			e.StatusCode = 0
+		}
+	default:
+		e.StatusCode = 0
+	}
+	return nil
 }

@@ -128,7 +128,7 @@ func RequestWithRetryAndRead(method string, url string, queries map[string]strin
 	// Always return as C7Error after this point, since this means C7 sent an error message.
 	// If we have trouble reading it for some reason, handle that here.
 	c7Error := C7Error{}
-	err := json.Unmarshal(body, &c7Error)
+	err := c7Error.UnmarshalJSON(body)
 	if err != nil {
 		c7Error.StatusCode = response.StatusCode
 		c7Error.Err = errors.New("error unmarshalling Commerce7 Error Message: " + err.Error() + "json: " + string(body))
