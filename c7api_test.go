@@ -110,7 +110,7 @@ func TestGetC7_New(t *testing.T) {
 		auth          string
 		attempts      int
 		rl            genericRateLimiter
-		expectedCode  int
+		expectedCode  string
 		expectedBytes []byte
 	}
 
@@ -123,7 +123,7 @@ func TestGetC7_New(t *testing.T) {
 			tenant:        tenant,
 			auth:          goodAuth,
 			attempts:      0,
-			expectedCode:  200,
+			expectedCode:  "200",
 			expectedBytes: nil, // TODO: add expected bytes
 		},
 		{
@@ -135,7 +135,7 @@ func TestGetC7_New(t *testing.T) {
 			auth:          "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth")),
 			attempts:      0,
 			rl:            &rateLimiterMock{},
-			expectedCode:  401,
+			expectedCode:  "401",
 			expectedBytes: nil,
 		},
 	}
@@ -196,13 +196,13 @@ func TestPostC7_New(t *testing.T) {
 		auth               string
 		attempts           int
 		rl                 genericRateLimiter
-		expectedStatusCode int
+		expectedStatusCode string
 		expectedBytes      []byte
 	}{
-		{"Good Post", "POST", urlStringFulfillment, goodBytes, tenant, goodAuth, 0, &rateLimiterMock{}, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":"2023-07-30T10:59:32.000Z","orderNumber":1235,`)},
-		{"Bad Auth POST", "POST", urlStringFulfillment, nil, tenant, badAuth, 0, nil, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
-		{"Already Fulfileld POST", "POST", urlStringFulfillment, goodBytes, tenant, goodAuth, 0, nil, 422, []byte(`{"statusCode":422,"type":"validationError","message":"Can not fulfill an order that is marked Fulfilled"}`)},
-		{"Blank POST", "POST", urlStringFulfillment, blankBytes, tenant, goodAuth, 0, nil, 422, []byte(`{"statusCode":422,"type":"validationError","message":"One or more elements is missing or invalid","errors":[{"field":"type","message":"required"},{"field":"fulfillmentDate","message":"required"},{"field":"packageCount","message":"required"}]}`)},
+		{"Good Post", "POST", urlStringFulfillment, goodBytes, tenant, goodAuth, 0, &rateLimiterMock{}, "200", []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":"2023-07-30T10:59:32.000Z","orderNumber":1235,`)},
+		{"Bad Auth POST", "POST", urlStringFulfillment, nil, tenant, badAuth, 0, nil, "401", []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
+		{"Already Fulfileld POST", "POST", urlStringFulfillment, goodBytes, tenant, goodAuth, 0, nil, "422", []byte(`{"statusCode":422,"type":"validationError","message":"Can not fulfill an order that is marked Fulfilled"}`)},
+		{"Blank POST", "POST", urlStringFulfillment, blankBytes, tenant, goodAuth, 0, nil, "422", []byte(`{"statusCode":422,"type":"validationError","message":"One or more elements is missing or invalid","errors":[{"field":"type","message":"required"},{"field":"fulfillmentDate","message":"required"},{"field":"packageCount","message":"required"}]}`)},
 	}
 
 	// Delete previous fulfillment for test
@@ -288,12 +288,12 @@ func TestDeleteC7_New(t *testing.T) {
 		auth          string
 		attempts      int
 		rl            genericRateLimiter
-		expectedCode  int
+		expectedCode  string
 		expectedBytes []byte
 	}{
-		{"Good DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, &rateLimiterMock{}, 200, []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":null,"orderNumber":1235,`)},
-		{"Bad Auth DELETE", "DELETE", urlStringDelete, nil, tenant, badAuth, 0, nil, 401, []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
-		{"No Fulfillment to DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, nil, 422, []byte(`{"statusCode":422,"type":"processingError","message":"Fulfillment not found"}`)},
+		{"Good DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, &rateLimiterMock{}, "200", []byte(`{"id":"034e6096-429d-452c-b258-5d37a1522934","orderSubmittedDate":"2023-07-30T20:44:32.725Z","orderPaidDate":"2023-07-30T20:44:32.725Z","orderFulfilledDate":null,"orderNumber":1235,`)},
+		{"Bad Auth DELETE", "DELETE", urlStringDelete, nil, tenant, badAuth, 0, nil, "401", []byte(`{"statusCode":401,"type":"unauthorized","message":"Unauthenticated User","errors":[]}`)},
+		{"No Fulfillment to DELETE", "DELETE", urlStringDelete, nil, tenant, goodAuth, 0, nil, "422", []byte(`{"statusCode":422,"type":"processingError","message":"Fulfillment not found"}`)},
 	}
 
 	for _, tc := range testCases {
@@ -371,14 +371,14 @@ func TestGetFulfillmentId(t *testing.T) {
 	testCases := []struct {
 		orderNumber  int
 		auth         string
-		expectedCode int
+		expectedCode string
 		expectedId   string
 	}{
-		{1232, AppAuthEncoded, 0, "9475723a-8f11-4111-9234-852d85813581"},
-		{1007, AppAuthEncoded, 0, "030c8ab2-354b-41a7-acd4-a13bedc70dd5"},
-		{999, AppAuthEncoded, 0, ""},
-		{1239, AppAuthEncoded, 0, ""},
-		{1232, "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth")), 401, ""},
+		{1232, AppAuthEncoded, "0", "9475723a-8f11-4111-9234-852d85813581"},
+		{1007, AppAuthEncoded, "0", "030c8ab2-354b-41a7-acd4-a13bedc70dd5"},
+		{999, AppAuthEncoded, "0", ""},
+		{1239, AppAuthEncoded, "0", ""},
+		{1232, "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth")), "401", ""},
 	}
 
 	// for i, param := range testParams {

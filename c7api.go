@@ -130,8 +130,8 @@ func RequestWithRetryAndRead(method string, url string, queries map[string]strin
 	c7Error := C7Error{}
 	err := json.Unmarshal(body, &c7Error)
 	if err != nil {
-		c7Error.StatusCode = response.StatusCode
-		c7Error.Err = errors.New("error unmarshalling Commerce7 Error Message: " + err.Error() + "json: " + string(body))
+		c7Error.StatusCode = strconv.Itoa(response.StatusCode)
+		c7Error.Err = errors.New("error unmarshalling Commerce7 Error Message: " + err.Error() + " json: " + string(body))
 		return &body, &c7Error
 	}
 

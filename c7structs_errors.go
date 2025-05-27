@@ -5,7 +5,7 @@ import (
 )
 
 type C7Error struct {
-	StatusCode int              `json:"statusCode"`
+	StatusCode string           `json:"statusCode"`
 	Type       string           `json:"type"`
 	Message    string           `json:"message"`
 	Errors     []map[string]any `json:"errors"`
@@ -19,7 +19,7 @@ func (e C7Error) Error() string {
 }
 
 func (e *C7Error) ErrorFull() string {
-	errorString := fmt.Sprintf("status code: %d, type: %s, message: %s, errors:", e.StatusCode, e.Type, e.Message)
+	errorString := fmt.Sprintf("status code: %s, type: %s, message: %s, errors:", e.StatusCode, e.Type, e.Message)
 
 	for i, err := range e.Errors {
 		errorString += fmt.Sprintf(" (%d):", i+1)
@@ -31,7 +31,7 @@ func (e *C7Error) ErrorFull() string {
 }
 
 func (e *C7Error) ErrorReadable() string {
-	errorString := fmt.Sprintf("status code: %d\ntype: %s\n message: %s\n", e.StatusCode, e.Type, e.Message)
+	errorString := fmt.Sprintf("status code: %s\ntype: %s\n message: %s\n", e.StatusCode, e.Type, e.Message)
 
 	for i, err := range e.Errors {
 		errorString += fmt.Sprintf("  Error %d:\n", i+1)
@@ -43,5 +43,5 @@ func (e *C7Error) ErrorReadable() string {
 }
 
 func (e *C7Error) ErrorSimple() string {
-	return fmt.Sprintf("status code: %d, type: %s, message: %s", e.StatusCode, e.Type, e.Message)
+	return fmt.Sprintf("status code: %s, type: %s, message: %s", e.StatusCode, e.Type, e.Message)
 }
