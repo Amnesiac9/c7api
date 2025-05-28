@@ -36,14 +36,14 @@ func GetWineryInfoSettings(tenant string, auth string, rl genericRateLimiter) (*
 	reqUrl := Endpoints.Setting
 	settingsResp, err := RequestWithRetryAndRead("GET", reqUrl, nil, nil, tenant, auth, 2, rl)
 	if err != nil {
-		return nil, fmt.Errorf("while getting tags: %w", err)
+		return nil, fmt.Errorf("while getting settings: %w", err)
 	}
 
 	// unmarshall the settings
 	settings := WinerySettings{}
 	err = json.Unmarshal(*settingsResp, &settings)
 	if err != nil {
-		return nil, fmt.Errorf("while unmarshalling tags payload: %w", err)
+		return nil, fmt.Errorf("while unmarshalling settings payload: %w", err)
 	}
 
 	return &settings, nil
