@@ -6,6 +6,8 @@
 
 Simple GO Package for working with the [Commerce 7](https://commerce7.com/) API.
 
+CURRENTLY IN DEVELOPMENT - EXPECT BREAKING CHANGES
+
 To install:
 ```
 github.com/Amnesiac9/c7api@latest
