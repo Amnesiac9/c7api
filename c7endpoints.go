@@ -19,6 +19,7 @@ type endpoints struct {
 	Vendor               string // "https://api.commerce7.com/v1/vendor" - example: https://api.commerce7.com/v1/vendor?q=myvendor
 	Collections          string // "https://api.commerce7.com/v1/collection" - example: https://api.commerce7.com/v1/collection?type=Manual
 	Department           string // "https://api.commerce7.com/v1/department" - example: https://api.commerce7.com/v1/department?q=wine
+	Setting              string // "https://api.commerce7.com/v1/setting" - Used for grabbing the winery info/settings from a given tenant.
 }
 
 func GetEndpointsV1() *endpoints {
@@ -39,6 +40,7 @@ func GetEndpointsV1() *endpoints {
 		Vendor:               API_BASE_URL + "/vendor",
 		Collections:          API_BASE_URL + "/collection",
 		Department:           API_BASE_URL + "/department",
+		Setting:              API_BASE_URL + "/setting",
 	}
 }
 
