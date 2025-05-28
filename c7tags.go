@@ -19,13 +19,18 @@ type TagPayload_Post struct {
 	TagId    string `json:"tagId"`
 }
 
+func (tagPayload *TagPayload_Post) ToString() string {
+	return fmt.Sprintf("ObjectId: %v | TagId: %v", tagPayload.ObjectId, tagPayload.TagId)
+}
+
 type TagPayload_Get struct {
 	Tags  []Tag `json:"tags"`
 	Total int   `json:"total"`
 }
 
-func (tagPayload *TagPayload_Post) ToString() string {
-	return fmt.Sprintf("ObjectId: %v | TagId: %v", tagPayload.ObjectId, tagPayload.TagId)
+type TagPayload_Create struct {
+	Title string `json:"title"`
+	Type  string `json:"type"`
 }
 
 // allowed object types: "order" | "customer"
@@ -113,4 +118,39 @@ func GetTags(tenant string, auth string, objectType string, query string, rl gen
 	}
 
 	return &tags, nil
+}
+
+func CreateTag(tenant, auth, objectType, tagTitle string, retryCount int, rl genericRateLimiter) (*Tag, error) {
+	objectType = strings.ToLower(objectType)
+	objectType = strings.ToLower(objectType)
+	if objectType != "order" && objectType != "customer" {
+		return nil, errors.New("invalid object type for add tag. Must be either: order || customer")
+	}
+
+	// Create payload
+	tagPayload := TagPayload_Create{
+		Title: tagTitle,
+		Type:  "Manual",
+	}
+
+	tagPayloadJson, err := json.Marshal(tagPayload)
+	if err != nil {
+		return nil, fmt.Errorf("error while marshalling tag payload: %w", err)
+	}
+
+	// Get the url based on object
+	reqUrl := Endpoints.Tag + "/" + objectType
+	resp, err := RequestWithRetryAndRead("POST", reqUrl, nil, &tagPayloadJson, tenant, auth, retryCount, rl)
+	if err != nil {
+		return nil, fmt.Errorf("error from C7 while attempting to post tag payload: %w", err)
+	}
+
+	// unmarshall
+	respTag := Tag{}
+	err = json.Unmarshal(*resp, &respTag)
+	if err != nil {
+		return nil, fmt.Errorf("error from while unmarshalling C7 response: %w", err)
+	}
+
+	return &respTag, nil
 }
