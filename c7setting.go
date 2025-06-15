@@ -5,6 +5,10 @@ import (
 	"fmt"
 )
 
+type WinerySettingsResponse struct {
+	Settings []WinerySettings `json:"settings"`
+}
+
 type WinerySettings struct {
 	Id                    string   `json:"id"`
 	CompanyName           string   `json:"companyName"`
@@ -40,12 +44,16 @@ func GetWineryInfoSettings(tenant string, auth string, rl genericRateLimiter) (*
 	}
 
 	// unmarshall the settings
-	settings := WinerySettings{}
-	err = json.Unmarshal(*settingsResp, &settings)
+	settingsPayload := WinerySettingsResponse{}
+	err = json.Unmarshal(*settingsResp, &settingsPayload)
 	if err != nil {
 		return nil, fmt.Errorf("while unmarshalling settings payload: %w", err)
 	}
 
-	return &settings, nil
+	if len(settingsPayload.Settings) != 1 {
+		return nil, fmt.Errorf("settings payload unexpected length: %d", len(settingsPayload.Settings))
+	}
+
+	return &settingsPayload.Settings[0], nil
 
 }
