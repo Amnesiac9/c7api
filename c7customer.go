@@ -46,3 +46,20 @@ func GetCustomerByEmail[T HasEmails](email string, tenant string, c7AppAuthEncod
 
 	return nil, fmt.Errorf("no customer found")
 }
+
+func GetCustomerById[T HasEmails](customerId string, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*T, error) {
+
+	reqUrl := Endpoints.Customer + "/" + customerId
+
+	resp, err := RequestWithRetryAndRead("GET", reqUrl, nil, nil, tenant, c7AppAuthEncoded, retryCount, rl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get customer from tenant: %w", err)
+	}
+
+	var c7Customer T
+	if err := json.Unmarshal(*resp, &c7Customer); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal customer: %w", err)
+	}
+
+	return &c7Customer, nil
+}
