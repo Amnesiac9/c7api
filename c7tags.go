@@ -83,7 +83,7 @@ func RemoveTagById(tenant string, auth string, tagId string, targetId string, ta
 
 	//https://api.commerce7.com/v1/tag-x-object/customer/{tagid}/{orderid}
 	//https://api.commerce7.com/v1/tag-x-object/customer/0f464186-4985-4737-bcc5-f5c33be0a591/d23cb84a-31c7-4a94-83c6-c6086fc48984
-	reqUrl := strings.Replace(Endpoints.TagXObject, "{:obj}", targetObjType, 1) + "/" + targetId
+	reqUrl := strings.Replace(Endpoints.TagXObject, "{:obj}", targetObjType, 1) + "/" + targetId + "/" + tagId
 	_, err := RequestWithRetryAndRead("DELETE", reqUrl, nil, nil, tenant, auth, retryCount, rl)
 	if err != nil {
 		return fmt.Errorf("while posting tag: %w | Tag Payload: %s", err, reqUrl)
