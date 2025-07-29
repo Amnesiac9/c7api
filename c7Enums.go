@@ -6,3 +6,10 @@ const (
 	OrderFulfillmentStatusPartiallyFulfilled    = "Partially Fulfilled"
 	OrderFulfillmentStatusFulfilled             = "Fulfilled"
 )
+
+// Delivery Method
+const (
+	OrderDeliveryMethodShip     = "Ship"
+	OrderDeliveryMethodPickup   = "Pickup"
+	OrderDeliveryMethodCarryout = "Carry Out"
+)
