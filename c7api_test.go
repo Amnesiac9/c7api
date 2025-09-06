@@ -93,7 +93,6 @@ func TestGetC7_Request(t *testing.T) {
 
 func TestGetC7_New(t *testing.T) {
 
-	urlStringOrders := "https://api.commerce7.com/v1/order"
 	queries := map[string]string{
 		"orderPaidDate": "btw:2023-07-29T07:00:00.000Z|2023-07-31T06:59:59.999Z",
 	}
@@ -118,7 +117,7 @@ func TestGetC7_New(t *testing.T) {
 		{
 			name:          "Good GET",
 			method:        "GET",
-			url:           urlStringOrders,
+			url:           Endpoints.Order,
 			body:          nil,
 			tenant:        tenant,
 			auth:          goodAuth,
@@ -129,7 +128,7 @@ func TestGetC7_New(t *testing.T) {
 		{
 			name:          "Bad Auth GET",
 			method:        "GET",
-			url:           urlStringOrders,
+			url:           Endpoints.Order,
 			body:          nil,
 			tenant:        tenant,
 			auth:          "Basic " + base64.StdEncoding.EncodeToString([]byte("bad:auth")),
@@ -420,8 +419,8 @@ func Test_MarkNoFulfillmentRequired(t *testing.T) {
 
 	// Delete previous fulfillment for test
 	fulfillmentIds, err := GetFulfillmentIds(orderNumber, testTenant, AppAuthEncoded, 1, nil)
-	if err != nil {
-		t.Error("Error getting fulfillment id: ", err.Error())
+	if err != nil && err.Error() != "no fulfillments found" {
+		t.Error("Error getting fulfillment id:", err.Error())
 		return
 	}
 
@@ -430,14 +429,16 @@ func Test_MarkNoFulfillmentRequired(t *testing.T) {
 		return
 	}
 
-	fulfillmentId := fulfillmentIds[0]
+	if len(fulfillmentIds) == 1 {
+		fulfillmentId := fulfillmentIds[0]
 
-	t.Log("Deleting Fulfillment ID: ", fulfillmentId)
+		t.Log("Deleting Fulfillment ID: ", fulfillmentId)
 
-	_, err = DeleteFulfillmentById(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1, nil)
-	if err != nil {
-		t.Error("Error deleting fulfillment: ", err.Error())
-		return
+		_, err = DeleteFulfillmentById(orderId, fulfillmentId, testTenant, AppAuthEncoded, 1, nil)
+		if err != nil {
+			t.Error("Error deleting fulfillment: ", err.Error())
+			return
+		}
 	}
 
 	shippedTime, err := time.Parse(time.RFC3339, "2023-07-30T10:59:32.000Z")
@@ -445,7 +446,6 @@ func Test_MarkNoFulfillmentRequired(t *testing.T) {
 		t.Error("Error parsing time: ", err.Error())
 		return
 	}
-
 	// Mark no fulfillment required
 	err = MarkNoFulfillmentRequired(orderId, shippedTime, testTenant, AppAuthEncoded, 1, nil)
 	if err != nil {

@@ -20,6 +20,8 @@ type endpoints struct {
 	Collections          string // "https://api.commerce7.com/v1/collection" - example: https://api.commerce7.com/v1/collection?type=Manual
 	Department           string // "https://api.commerce7.com/v1/department" - example: https://api.commerce7.com/v1/department?q=wine
 	Setting              string // "https://api.commerce7.com/v1/setting" - Used for grabbing the winery info/settings from a given tenant.
+	WineAppellation      string // "https://api.commerce7.com/v1/wine-appellation" - Get valid wine appellations.
+	WineVarietal         string // "https://api.commerce7.com/v1/wine-varietal" - Get valid wine varietals.
 }
 
 func GetEndpointsV1() *endpoints {
@@ -41,6 +43,8 @@ func GetEndpointsV1() *endpoints {
 		Collections:          API_BASE_URL + "/collection",
 		Department:           API_BASE_URL + "/department",
 		Setting:              API_BASE_URL + "/setting",
+		WineAppellation:      API_BASE_URL + "/wine-appellation",
+		WineVarietal:         API_BASE_URL + "/wine-varietal",
 	}
 }
 

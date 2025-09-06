@@ -65,6 +65,10 @@ func (e *C7Error) UnmarshalJSON(data []byte) error {
 	switch v := aux.StatusCode.(type) {
 	case int:
 		e.StatusCode = v
+	case float64:
+		e.StatusCode = int(v)
+	case float32:
+		e.StatusCode = int(v)
 	case string:
 		var err error
 		if e.StatusCode, err = strconv.Atoi(v); err != nil {
