@@ -16,10 +16,23 @@ const (
 )
 
 // Channel
-
 const (
 	OrderChannelPOS     = "POS"
 	OrderChannelInbound = "Inbound"
 	OrderChannelClub    = "Club"
 	OrderChannelWeb     = "Web"
+)
+
+// Product Type
+const (
+	ProductTypeGeneralMerchandise = "General Merchandise"
+	ProductTypeTasting            = "Tasting"
+	ProductTypeWine               = "Wine"
+	ProductTypeCannabis           = "Cannabis"
+	ProductTypeBundle             = "Bundle"
+	ProductTypeReservation        = "Reservation"
+	ProductTypeEventTicket        = "Event Ticket"
+	ProductTypeGiftCard           = "Gift Card"
+	ProductTypeCollateral         = "Collateral"
+	ProductTypeRebate             = "Rebate"
 )
