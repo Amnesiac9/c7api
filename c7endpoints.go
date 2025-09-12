@@ -7,6 +7,7 @@ type endpoints struct {
 	Cart                 string // "https://api.commerce7.com/v1/cart" - https://developer.commerce7.com/docs/orders
 	Customer             string // "https://api.commerce7.com/v1/customer" - https://developer.commerce7.com/docs/customers
 	CustomerId           string // "https://api.commerce7.com/v1/customer/{:id}" - https://developer.commerce7.com/docs/customers
+	ClubMembership       string // "https://api.commerce7.com/v1/club-membership" -
 	FulfillmentAll       string // "https://api.commerce7.com/v1/order/{:id}/fulfillment/all" - https://developer.commerce7.com/docs/fulfillment
 	Fulfillment          string // "https://api.commerce7.com/v1/order/{:id}/fulfillment" - https://developer.commerce7.com/docs/fulfillment
 	Inventory            string // "https://api.commerce7.com/v1/inventory" - https://developer.commerce7.com/docs/inventory
@@ -30,6 +31,7 @@ func GetEndpointsV1() *endpoints {
 		Cart:                 API_BASE_URL + "/cart",
 		Customer:             API_BASE_URL + "/customer",
 		CustomerId:           API_BASE_URL + "/customer/{:id}",
+		ClubMembership:       API_BASE_URL + "/club-membership",
 		FulfillmentAll:       API_BASE_URL + "/order/{:id}/fulfillment/all",
 		Fulfillment:          API_BASE_URL + "/order/{:id}/fulfillment",
 		Inventory:            API_BASE_URL + "/inventory",
