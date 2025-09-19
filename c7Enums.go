@@ -36,3 +36,11 @@ const (
 	ProductTypeCollateral         = "Collateral"
 	ProductTypeRebate             = "Rebate"
 )
+
+// Webhook Action
+const (
+	WebhookActionCreate     = "Create"
+	WebhookActionUpdate     = "Update"
+	WebhookActionBulkUpdate = "Bulk Update"
+	WebhookActionDelete     = "Delete"
+)
