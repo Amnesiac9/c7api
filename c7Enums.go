@@ -44,3 +44,9 @@ const (
 	WebhookActionBulkUpdate = "Bulk Update"
 	WebhookActionDelete     = "Delete"
 )
+
+// Club Membership Status
+const (
+	ClubMembershipStatusActive    = "Active"
+	ClubMembershipStatusCancelled = "Cancelled"
+)
