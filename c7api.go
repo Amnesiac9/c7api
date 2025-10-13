@@ -15,6 +15,19 @@ import (
 
 const SLEEP_TIME = 500 * time.Millisecond
 
+func Fetch[T any](method string, url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*T, error) {
+	data, err := RequestWithRetryAndRead(method, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
+	if err != nil {
+		return nil, err
+	}
+	var v T
+	err = json.Unmarshal(*data, v)
+	if err != nil {
+		return nil, err
+	}
+	return &v, nil
+}
+
 // Basic request. Will return the response or error if any.
 func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, errorOnNotOK bool) (*http.Response, error) {
 	//
