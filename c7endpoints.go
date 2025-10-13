@@ -11,6 +11,7 @@ type endpoints struct {
 	FulfillmentAll       string // "https://api.commerce7.com/v1/order/{:id}/fulfillment/all" - https://developer.commerce7.com/docs/fulfillment
 	Fulfillment          string // "https://api.commerce7.com/v1/order/{:id}/fulfillment" - https://developer.commerce7.com/docs/fulfillment
 	GiftCard             string // "https://api.commerce7.com/v1/gift-card" - https://developer.commerce7.com/docs/gift-cards
+	GiftCardTransaction  string // "https://api.commerce7.com/v1/gift-card-transaction"
 	Inventory            string // "https://api.commerce7.com/v1/inventory" - https://developer.commerce7.com/docs/inventory
 	InventoryTransaction string // "https://api.commerce7.com/v1/inventory-transaction" - https://developer.commerce7.com/docs/inventory
 	Order                string // "https://api.commerce7.com/v1/order" - https://developer.commerce7.com/docs/orders
@@ -36,6 +37,7 @@ func GetEndpointsV1() *endpoints {
 		FulfillmentAll:       API_BASE_URL + "/order/{:id}/fulfillment/all",
 		Fulfillment:          API_BASE_URL + "/order/{:id}/fulfillment",
 		GiftCard:             API_BASE_URL + "/gift-card",
+		GiftCardTransaction:  API_BASE_URL + "/gift-card-transaction",
 		Inventory:            API_BASE_URL + "/inventory",
 		InventoryTransaction: API_BASE_URL + "/inventory-transaction",
 		Order:                API_BASE_URL + "/order",
