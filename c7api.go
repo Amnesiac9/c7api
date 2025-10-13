@@ -21,7 +21,7 @@ func Fetch[T any](method string, url string, queries map[string]string, reqBody 
 		return nil, err
 	}
 	var v T
-	err = json.Unmarshal(*data, v)
+	err = json.Unmarshal(*data, &v)
 	if err != nil {
 		return nil, err
 	}
