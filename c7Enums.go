@@ -50,3 +50,9 @@ const (
 	ClubMembershipStatusActive    = "Active"
 	ClubMembershipStatusCancelled = "Cancelled"
 )
+
+// GiftCard Status
+const (
+	GiftCardStatusActive    = "Active"
+	GiftCardStatusCancelled = "Cancelled"
+)
