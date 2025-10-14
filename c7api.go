@@ -28,7 +28,12 @@ func Get[T any](url string, queries map[string]string, reqBody *[]byte, tenant s
 	return &v, nil
 }
 
-func Post[T any](object T, url string, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
+func Post[T any](object *T, url string, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
+
+	if object == nil {
+		return nil, errors.New("object cannot be nil")
+	}
+
 	bytes, err := json.Marshal(object)
 	if err != nil {
 		return nil, fmt.Errorf("marshalling: %w", err)
