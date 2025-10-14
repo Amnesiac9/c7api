@@ -15,8 +15,8 @@ import (
 
 const SLEEP_TIME = 500 * time.Millisecond
 
-func Fetch[T any](method string, url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*T, error) {
-	data, err := RequestWithRetryAndRead(method, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
+func Get[T any](url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*T, error) {
+	data, err := RequestWithRetryAndRead(http.MethodGet, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
 	if err != nil {
 		return nil, err
 	}
@@ -26,6 +26,19 @@ func Fetch[T any](method string, url string, queries map[string]string, reqBody 
 		return nil, err
 	}
 	return &v, nil
+}
+
+func Post[T any](object T, url string, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
+	bytes, err := json.Marshal(object)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling: %w", err)
+	}
+
+	data, err := RequestWithRetryAndRead(http.MethodPost, url, nil, &bytes, tenant, c7AppAuthEncoded, retryCount, rl)
+	if err != nil {
+		return nil, fmt.Errorf("c7 post request: %w", err)
+	}
+	return data, nil
 }
 
 // Basic request. Will return the response or error if any.
