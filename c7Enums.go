@@ -56,3 +56,10 @@ const (
 	GiftCardStatusActive    = "Active"
 	GiftCardStatusCancelled = "Cancelled"
 )
+
+// GiftCard Type
+
+const (
+	GiftCardTypeVirtual  = "Virtual"
+	GiftCardTypePhysical = "Physical"
+)
