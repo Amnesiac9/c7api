@@ -46,6 +46,24 @@ func Post[T any](object *T, url string, tenant string, c7AppAuthEncoded string, 
 	return data, nil
 }
 
+func Put[T any](object *T, url string, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
+
+	if object == nil {
+		return nil, errors.New("object cannot be nil")
+	}
+
+	bytes, err := json.Marshal(object)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling: %w", err)
+	}
+
+	data, err := RequestWithRetryAndRead(http.MethodPut, url, nil, &bytes, tenant, c7AppAuthEncoded, retryCount, rl)
+	if err != nil {
+		return nil, fmt.Errorf("c7 put request: %w", err)
+	}
+	return data, nil
+}
+
 // Basic request. Will return the response or error if any.
 func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, errorOnNotOK bool) (*http.Response, error) {
 	//
