@@ -49,6 +49,7 @@ const (
 const (
 	ClubMembershipStatusActive    = "Active"
 	ClubMembershipStatusCancelled = "Cancelled"
+	ClubMembershipStatusOnHold    = "On Hold"
 )
 
 // GiftCard Status
