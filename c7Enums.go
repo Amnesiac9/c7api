@@ -64,3 +64,22 @@ const (
 	GiftCardTypeVirtual  = "Virtual"
 	GiftCardTypePhysical = "Physical"
 )
+
+// MetaDataConfig Object Types
+const (
+	MetaDataConfigObjectAllocation      = "allocation"
+	MetaDataConfigObjectClubMembership  = "club-membership"
+	MetaDataConfigObjectCollection      = "collection"
+	MetaDataConfigObjectCustomer        = "customer"
+	MetaDataConfigObjectCustomerAddress = "customer-address"
+	MetaDataConfigObjectOrder           = "order"
+	MetaDataConfigObjectProduct         = "product"
+	MetaDataConfigObjectReservation     = "reservation"
+	MetaDataConfigObjectExperience      = "experience"
+)
+
+// Tag X Object Types
+const (
+	TagXObjectTypeCustomer = "customer"
+	TagXObjectTypeOrder    = "order"
+)

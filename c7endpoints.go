@@ -14,10 +14,12 @@ type endpoints struct {
 	GiftCardTransaction  string // "https://api.commerce7.com/v1/gift-card-transaction"
 	Inventory            string // "https://api.commerce7.com/v1/inventory" - https://developer.commerce7.com/docs/inventory
 	InventoryTransaction string // "https://api.commerce7.com/v1/inventory-transaction" - https://developer.commerce7.com/docs/inventory
+	MetaDataConfig       string // "https://api.commerce7.com/v1/meta-data-config/" + "{:obj}" - Requires an object appended; allocation, club-membership, collection, customer, customer-address, order, product, reservation, experience
+	MetaDataConfigObj    string // "https://api.commerce7.com/v1/meta-data-config/{:obj}" - Requires an object appended; allocation, club-membership, collection, customer, customer-address, order, product, reservation, experience
 	Order                string // "https://api.commerce7.com/v1/order" - https://developer.commerce7.com/docs/orders
 	Product              string // "https://api.commerce7.com/v1/product" - https://developer.commerce7.com/docs/products
 	Tag                  string // "https://api.commerce7.com/v1/tag" - example: https://api.commerce7.com/v1/tag/customer?q=&type=Manual - Use q to search for specific keywords, type manual to get only manually applied tags
-	TagXObject           string // https://api.commerce7.com/v1/tag-x-object/{:obj} - Requires an object appended, either customer or order
+	TagXObject           string // https://api.commerce7.com/v1/tag-x-object/{:obj} - Requires an object appended; either "customer" or "order"
 	LoyaltyTransaction   string // "https://api.commerce7.com/v1/loyalty-transaction" - requires Commerce7 Loyalty Extension https://documentation.commerce7.com/loyalty-feature-overview
 	Vendor               string // "https://api.commerce7.com/v1/vendor" - example: https://api.commerce7.com/v1/vendor?q=myvendor
 	Collections          string // "https://api.commerce7.com/v1/collection" - example: https://api.commerce7.com/v1/collection?type=Manual
@@ -40,6 +42,8 @@ func GetEndpointsV1() *endpoints {
 		GiftCardTransaction:  API_BASE_URL + "/gift-card-transaction",
 		Inventory:            API_BASE_URL + "/inventory",
 		InventoryTransaction: API_BASE_URL + "/inventory-transaction",
+		MetaDataConfig:       API_BASE_URL + "/meta-data-config/",
+		MetaDataConfigObj:    API_BASE_URL + "/meta-data-config/{:obj}",
 		Order:                API_BASE_URL + "/order",
 		Product:              API_BASE_URL + "/product",
 		Tag:                  API_BASE_URL + "/tag",
