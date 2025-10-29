@@ -25,7 +25,7 @@ type MetaDataConfigPayload struct {
 }
 
 func GetMetaDataConfigs(tenant, obj, q, c7appAuthEncoded string, retryCount int, rl genericRateLimiter) (*MetaDataConfigPayload, error) {
-	reqUrl := url.PathEscape(Endpoints.MetaDataConfig + obj)
+	reqUrl := Endpoints.MetaDataConfig + url.PathEscape(obj)
 	resp, err := RequestWithRetryAndRead(http.MethodGet, reqUrl, nil, nil, tenant, c7appAuthEncoded, retryCount, rl)
 	if err != nil {
 		return nil, err
