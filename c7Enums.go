@@ -118,6 +118,17 @@ func IsValidTaxType(taxType string) bool {
 	}
 }
 
+func GetValidTaxTypes() []string {
+	return []string{
+		TaxTypeWine,
+		TaxTypeGeneralMerchandise,
+		TaxTypeFood,
+		TaxTypePreparedFood,
+		TaxTypeBooks,
+		TaxTypeNotTaxable,
+	}
+}
+
 const (
 	AdminStatusAvailable    = "Available"
 	AdminStatusNotAvailable = "Not Available"
