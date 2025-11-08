@@ -15,6 +15,13 @@ const (
 	OrderDeliveryMethodCarryout = "Carry Out"
 )
 
+// Fulfillment Type
+const (
+	OrderFulfillmentTypePickedUp              = "Picked Up"
+	OrderFulfillmentTypeShipped               = "Shipped"
+	OrderFulfillmentTypeNoFulfillmentRequired = "No Fulfillment Required"
+)
+
 // Channel
 const (
 	OrderChannelPOS     = "POS"
