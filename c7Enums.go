@@ -151,6 +151,13 @@ func IsValidAdminStatus(status string) bool {
 	}
 }
 
+func GetValidAdminStatuses() []string {
+	return []string{
+		AdminStatusAvailable,
+		AdminStatusNotAvailable,
+	}
+}
+
 const (
 	WebStatusAvailable    = "Available"
 	WebStatusNotAvailable = "Not Available"
@@ -165,5 +172,13 @@ func IsValidWebStatus(status string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func GetValidWebStatuses() []string {
+	return []string{
+		WebStatusAvailable,
+		WebStatusNotAvailable,
+		WebStatusRetired,
 	}
 }
