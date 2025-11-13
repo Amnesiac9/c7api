@@ -44,6 +44,39 @@ const (
 	ProductTypeRebate             = "Rebate"
 )
 
+func IsValidProductType(taxType string) bool {
+	switch taxType {
+	case ProductTypeGeneralMerchandise,
+		ProductTypeTasting,
+		ProductTypeWine,
+		ProductTypeCannabis,
+		ProductTypeBundle,
+		ProductTypeReservation,
+		ProductTypeEventTicket,
+		ProductTypeGiftCard,
+		ProductTypeCollateral,
+		ProductTypeRebate:
+		return true
+	default:
+		return false
+	}
+}
+
+func GetValidProductTypes() []string {
+	return []string{
+		ProductTypeGeneralMerchandise,
+		ProductTypeTasting,
+		ProductTypeWine,
+		ProductTypeCannabis,
+		ProductTypeBundle,
+		ProductTypeReservation,
+		ProductTypeEventTicket,
+		ProductTypeGiftCard,
+		ProductTypeCollateral,
+		ProductTypeRebate,
+	}
+}
+
 // Webhook Action
 const (
 	WebhookActionCreate     = "Create"
