@@ -79,7 +79,7 @@ func GetAll[T any, W Paginator[T]](url string, baseQueries map[string]string, re
 }
 
 // Cursors do not require rate limiting for now
-func GetAllWithCursor[T any, W Cursornator[T]](url string, baseQueries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]T, error) {
+func GetAllWithCursor[T any, W Cursornator[T]](url string, baseQueries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]T, error) {
 	all := make([]T, 0, PageSize)
 
 	// Clone the base queries so we can safely mutate page/limit
@@ -103,7 +103,7 @@ func GetAllWithCursor[T any, W Cursornator[T]](url string, baseQueries map[strin
 			queries["cursor"] = cursor
 		}
 
-		wrapperPtr, err := Get[W](url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
+		wrapperPtr, err := Get[W](url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, nil)
 		if err != nil {
 			return nil, err
 		}
