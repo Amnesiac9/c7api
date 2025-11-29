@@ -16,6 +16,11 @@ type Paginator[T any] interface {
 	GetTotal() int
 }
 
+type Cursornator[T any] interface {
+	GetItems() []T
+	GetCursor() string
+}
+
 func GetAll[T any, W Paginator[T]](url string, baseQueries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]T, error) {
 	all := make([]T, 0, PageSize)
 
@@ -65,6 +70,53 @@ func GetAll[T any, W Paginator[T]](url string, baseQueries map[string]string, re
 		}
 
 		page++
+	}
+
+	return &all, nil
+}
+
+func GetAllWithCursor[T any, W Cursornator[T]](url string, baseQueries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]T, error) {
+	all := make([]T, 0, PageSize)
+
+	// Clone the base queries so we can safely mutate page/limit
+	queries := make(map[string]string, len(baseQueries)+2)
+	for k, v := range baseQueries {
+		queries[k] = v
+	}
+
+	// Start cursor unless already passed as a query
+	cursor := "start"
+	if c, ok := queries["cursor"]; ok {
+		cursor = c
+	}
+	for {
+		queries["cursor"] = cursor
+
+		wrapperPtr, err := Get[W](url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
+		if err != nil {
+			return nil, err
+		}
+		if wrapperPtr == nil {
+			// treat nil as no more data
+			break
+		}
+
+		wrapper := *wrapperPtr
+
+		pageItems := wrapper.GetItems()
+		cursor = wrapper.GetCursor()
+
+		if len(pageItems) == 0 {
+			break
+		}
+
+		all = append(all, pageItems...)
+
+		// Stop if we already fetched all items
+		if cursor == "" {
+			break
+		}
+
 	}
 
 	return &all, nil
