@@ -2,8 +2,13 @@ package c7api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
+)
+
+var (
+	ErrNotFound = errors.New("not found")
 )
 
 type C7Error struct {
