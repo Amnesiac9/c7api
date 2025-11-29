@@ -14,6 +14,7 @@ import (
 )
 
 const SLEEP_TIME = 500 * time.Millisecond
+const PageSize = 50
 
 func Get[T any](url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*T, error) {
 	data, err := RequestWithRetryAndRead(http.MethodGet, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
