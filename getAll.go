@@ -16,6 +16,9 @@ type Paginator[T any] interface {
 	GetTotal() int
 }
 
+// Cursornator is implemented by wrapper types that expose:
+//   - the slice of items on this "page"
+//   - the cursor for the *next* page (empty string means "no more")
 type Cursornator[T any] interface {
 	GetItems() []T
 	GetCursor() string
@@ -87,10 +90,17 @@ func GetAllWithCursor[T any, W Cursornator[T]](url string, baseQueries map[strin
 	// Start cursor unless already passed as a query
 	cursor := "start"
 	if c, ok := queries["cursor"]; ok {
-		cursor = c
+		if c == "" {
+			delete(queries, "cursor")
+		} else {
+			cursor = c
+		}
 	}
 	for {
-		queries["cursor"] = cursor
+		// Only set cursor if non-empty
+		if cursor != "" {
+			queries["cursor"] = cursor
+		}
 
 		wrapperPtr, err := Get[W](url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
 		if err != nil {
@@ -104,7 +114,7 @@ func GetAllWithCursor[T any, W Cursornator[T]](url string, baseQueries map[strin
 		wrapper := *wrapperPtr
 
 		pageItems := wrapper.GetItems()
-		cursor = wrapper.GetCursor()
+		nextCursor := wrapper.GetCursor()
 
 		if len(pageItems) == 0 {
 			break
@@ -112,11 +122,17 @@ func GetAllWithCursor[T any, W Cursornator[T]](url string, baseQueries map[strin
 
 		all = append(all, pageItems...)
 
-		// Stop if we already fetched all items
-		if cursor == "" {
+		// if API returns the same cursor, avoid infinite loop
+		if nextCursor == cursor {
 			break
 		}
 
+		// Stop if no cursor
+		if nextCursor == "" {
+			break
+		}
+
+		cursor = nextCursor
 	}
 
 	return &all, nil
