@@ -1,6 +1,7 @@
 package c7api
 
-const API_BASE_URL = "https://api.commerce7.com/v1"
+const API_URL = "https://api.commerce7.com/v1"
+const API_URL_V2 = "https://api.commerce7.com/v2"
 
 type endpoints struct {
 	Auth                 string // "https://api.commerce7.com/v1/account/user" - https://developer.commerce7.com/docs/commerce7-apis
@@ -29,33 +30,34 @@ type endpoints struct {
 	WineVarietal         string // "https://api.commerce7.com/v1/wine-varietal" - Get valid wine varietals.
 }
 
-func GetEndpointsV1() *endpoints {
+func GetEndpoints(baseURL string) *endpoints {
 	return &endpoints{
-		Auth:                 API_BASE_URL + "/account/user",
-		Cart:                 API_BASE_URL + "/cart",
-		Customer:             API_BASE_URL + "/customer",
-		CustomerId:           API_BASE_URL + "/customer/{:id}",
-		ClubMembership:       API_BASE_URL + "/club-membership",
-		FulfillmentAll:       API_BASE_URL + "/order/{:id}/fulfillment/all",
-		Fulfillment:          API_BASE_URL + "/order/{:id}/fulfillment",
-		GiftCard:             API_BASE_URL + "/gift-card",
-		GiftCardTransaction:  API_BASE_URL + "/gift-card-transaction",
-		Inventory:            API_BASE_URL + "/inventory",
-		InventoryTransaction: API_BASE_URL + "/inventory-transaction",
-		MetaDataConfig:       API_BASE_URL + "/meta-data-config/",
-		MetaDataConfigObj:    API_BASE_URL + "/meta-data-config/{:obj}",
-		Order:                API_BASE_URL + "/order",
-		Product:              API_BASE_URL + "/product",
-		Tag:                  API_BASE_URL + "/tag",
-		TagXObject:           API_BASE_URL + "/tag-x-object/{:obj}",
-		LoyaltyTransaction:   API_BASE_URL + "/loyalty-transaction",
-		Vendor:               API_BASE_URL + "/vendor",
-		Collections:          API_BASE_URL + "/collection",
-		Department:           API_BASE_URL + "/department",
-		Setting:              API_BASE_URL + "/setting",
-		WineAppellation:      API_BASE_URL + "/wine-appellation",
-		WineVarietal:         API_BASE_URL + "/wine-varietal",
+		Auth:                 baseURL + "/account/user",
+		Cart:                 baseURL + "/cart",
+		Customer:             baseURL + "/customer",
+		CustomerId:           baseURL + "/customer/{:id}",
+		ClubMembership:       baseURL + "/club-membership",
+		FulfillmentAll:       baseURL + "/order/{:id}/fulfillment/all",
+		Fulfillment:          baseURL + "/order/{:id}/fulfillment",
+		GiftCard:             baseURL + "/gift-card",
+		GiftCardTransaction:  baseURL + "/gift-card-transaction",
+		Inventory:            baseURL + "/inventory",
+		InventoryTransaction: baseURL + "/inventory-transaction",
+		MetaDataConfig:       baseURL + "/meta-data-config/",
+		MetaDataConfigObj:    baseURL + "/meta-data-config/{:obj}",
+		Order:                baseURL + "/order",
+		Product:              baseURL + "/product",
+		Tag:                  baseURL + "/tag",
+		TagXObject:           baseURL + "/tag-x-object/{:obj}",
+		LoyaltyTransaction:   baseURL + "/loyalty-transaction",
+		Vendor:               baseURL + "/vendor",
+		Collections:          baseURL + "/collection",
+		Department:           baseURL + "/department",
+		Setting:              baseURL + "/setting",
+		WineAppellation:      baseURL + "/wine-appellation",
+		WineVarietal:         baseURL + "/wine-varietal",
 	}
 }
 
-var Endpoints = GetEndpointsV1()
+var Endpoints = GetEndpoints(API_URL)
+var EndpointsV2 = GetEndpoints(API_URL_V2)
