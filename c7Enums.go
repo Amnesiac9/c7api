@@ -85,6 +85,18 @@ const (
 	WebhookActionDelete     = "Delete"
 )
 
+// Club Admin Status
+const (
+	ClubAdminStatusActive    = "Available"
+	ClubAdminStatusNotActive = "Not Available"
+)
+
+// ClubWebStatus
+const (
+	ClubWebStatusActive    = "Available"
+	ClubWebStatusNotActive = "Not Available"
+)
+
 // Club Membership Status
 const (
 	ClubMembershipStatusActive    = "Active"
