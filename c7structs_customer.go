@@ -61,11 +61,11 @@ type Flag struct {
 }
 
 type Notification struct {
-	Id       string      `json:"id"`
-	Data     interface{} `json:"data"`
-	Type     string      `json:"type"`
-	Content  string      `json:"content"`
-	ObjectId string      `json:"objectId"`
+	Id       string `json:"id"`
+	Data     any    `json:"data"`
+	Type     string `json:"type"`
+	Content  string `json:"content"`
+	ObjectId string `json:"objectId"`
 }
 
 type OrderInformation struct {
