@@ -118,19 +118,6 @@ const (
 	GiftCardTypePhysical = "Physical"
 )
 
-// MetaDataConfig Object Types
-const (
-	MetaDataConfigObjectAllocation      = "allocation"
-	MetaDataConfigObjectClubMembership  = "club-membership"
-	MetaDataConfigObjectCollection      = "collection"
-	MetaDataConfigObjectCustomer        = "customer"
-	MetaDataConfigObjectCustomerAddress = "customer-address"
-	MetaDataConfigObjectOrder           = "order"
-	MetaDataConfigObjectProduct         = "product"
-	MetaDataConfigObjectReservation     = "reservation"
-	MetaDataConfigObjectExperience      = "experience"
-)
-
 // Tag X Object Types
 const (
 	TagXObjectTypeCustomer = "customer"
@@ -226,5 +213,36 @@ func GetValidWebStatuses() []string {
 		WebStatusAvailable,
 		WebStatusNotAvailable,
 		WebStatusRetired,
+	}
+}
+
+// MetaDataConfig Object Types
+// allocation, club-membership, collection, customer, customer-address, order, product, reservation, experience
+const (
+	MetaDataConfigObjectAllocation      = "allocation"
+	MetaDataConfigObjectClubMembership  = "club-membership"
+	MetaDataConfigObjectCollection      = "collection"
+	MetaDataConfigObjectCustomer        = "customer"
+	MetaDataConfigObjectCustomerAddress = "customer-address"
+	MetaDataConfigObjectOrder           = "order"
+	MetaDataConfigObjectProduct         = "product"
+	MetaDataConfigObjectReservation     = "reservation"
+	MetaDataConfigObjectExperience      = "experience"
+)
+
+func IsValidMetaDataConfigObjectType(objType string) bool {
+	switch objType {
+	case MetaDataConfigObjectAllocation,
+		MetaDataConfigObjectClubMembership,
+		MetaDataConfigObjectCollection,
+		MetaDataConfigObjectCustomer,
+		MetaDataConfigObjectCustomerAddress,
+		MetaDataConfigObjectOrder,
+		MetaDataConfigObjectProduct,
+		MetaDataConfigObjectReservation,
+		MetaDataConfigObjectExperience:
+		return true
+	default:
+		return false
 	}
 }
