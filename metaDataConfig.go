@@ -7,6 +7,7 @@ import (
 	"net/url"
 )
 
+// Commerce7 metadata-config data types. Commerce7 accepts a fixed set of dataType strings
 const (
 	MetaDataTypeNumber    = "Number"
 	MetaDataTypeString    = "String"
