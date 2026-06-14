@@ -50,6 +50,15 @@ type MetaDataConfigPost struct {
 	Options    []string `json:"options"`
 }
 
+// For updating existing metadata config
+type MetaDataConfigPut struct {
+	Title      string   `json:"title"`
+	DataType   string   `json:"dataType"`
+	IsRequired bool     `json:"isRequired"`
+	SortOrder  int      `json:"sortOrder"`
+	Options    []string `json:"options"`
+}
+
 func GetMetaDataConfigs(tenant, obj, q, c7appAuthEncoded string, retryCount int, rl genericRateLimiter) (*MetaDataConfigPayload, error) {
 	reqUrl := Endpoints.MetaDataConfig + url.PathEscape(obj)
 	resp, err := RequestWithRetryAndRead(http.MethodGet, reqUrl, nil, nil, tenant, c7appAuthEncoded, retryCount, rl)
@@ -135,7 +144,7 @@ func DeleteMetaDataConfigById(objectId, objectType, tenant, c7AppAuthEncoded str
 	return nil
 }
 
-func PutMetaDataConfig(objectPayload *MetaDataConfigPost, objectType, objectId, tenant, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*MetaDataConfig, error) {
+func PutMetaDataConfig(objectPayload *MetaDataConfigPut, objectType, objectId, tenant, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*MetaDataConfig, error) {
 
 	if !IsValidMetaDataConfigObjectType(objectType) {
 		return nil, fmt.Errorf("not a valid object type for the metadata endpoint: %s", objectType)
