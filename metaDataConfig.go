@@ -7,6 +7,20 @@ import (
 	"net/url"
 )
 
+const (
+	MetaDataTypeNumber    = "Number"
+	MetaDataTypeString    = "String"
+	MetaDataTypeDate      = "Date Picker"
+	MetaDataTypeYesNo     = "Yes / No"
+	MetaDataTypeTrueFalse = "True / False"
+	MetaDataTypeRadio     = "Radio"
+	MetaDataTypeCheckbox  = "Checkbox"
+	MetaDataTypeSelect    = "Select"
+	MetaDataTypeHTML      = "HTML"
+	MetaDataTypeInteger   = "Integer"
+	MetaDataTypeTextArea  = "TextArea"
+)
+
 type MetaDataConfig struct {
 	Id         string   `json:"id"`
 	Title      string   `json:"title"`
