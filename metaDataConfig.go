@@ -93,7 +93,7 @@ func GetMetaDataConfigById(metadataId, objectType, tenant, c7AppAuthEncoded stri
 // # Response on success
 //
 // {"id":"05c64236-d697-42dc-a3d7-bdb96774e4a2","title":"d2","objectType":"Customer","code":"d2","dataType":"Select","isRequired":false,"options":["21e2","2323"],"sortOrder":1,"createdAt":"2026-06-10T04:37:01.830Z","updatedAt":"2026-06-10T04:37:01.830Z"}
-func PostMetaDataConfig(objectPayload *MetaDataConfigPost, objectType, objectId, tenant, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*MetaDataConfig, error) {
+func PostMetaDataConfig(objectPayload *MetaDataConfigPost, objectType, tenant, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*MetaDataConfig, error) {
 
 	if !IsValidMetaDataConfigObjectType(objectType) {
 		return nil, fmt.Errorf("not a valid object type for the metadata endpoint: %s", objectType)
@@ -104,7 +104,7 @@ func PostMetaDataConfig(objectPayload *MetaDataConfigPost, objectType, objectId,
 		return nil, fmt.Errorf("failed to marshal metadata object payload: %w", err)
 	}
 
-	reqUrl := Endpoints.MetaDataConfig + objectType + "/" + objectId
+	reqUrl := Endpoints.MetaDataConfig + objectType
 
 	resp, err := RequestWithRetryAndRead(http.MethodPost, reqUrl, nil, &objectBytes, tenant, c7AppAuthEncoded, retryCount, rl)
 	if err != nil {
@@ -119,18 +119,44 @@ func PostMetaDataConfig(objectPayload *MetaDataConfigPost, objectType, objectId,
 	return &c7MetaData, nil
 }
 
-func DeleteMetaDataConfigById(metadataId, objectType, tenant, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) error {
+func DeleteMetaDataConfigById(objectId, objectType, tenant, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) error {
 
 	if !IsValidMetaDataConfigObjectType(objectType) {
 		return fmt.Errorf("not a valid object type for the metadata endpoint")
 	}
 
-	reqUrl := Endpoints.MetaDataConfig + objectType + "/" + metadataId
+	reqUrl := Endpoints.MetaDataConfig + objectType + "/" + objectId
 
-	_, err := RequestWithRetryAndRead(http.MethodDelete, reqUrl, nil, nil, tenant, c7AppAuthEncoded, retryCount, rl)
+	_, err := RequestWithRetryAndRead(http.MethodPut, reqUrl, nil, nil, tenant, c7AppAuthEncoded, retryCount, rl)
 	if err != nil {
 		return fmt.Errorf("failed to get metadata: %w", err)
 	}
 
 	return nil
+}
+
+func PutMetaDataConfig(objectPayload *MetaDataConfigPost, objectType, objectId, tenant, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*MetaDataConfig, error) {
+
+	if !IsValidMetaDataConfigObjectType(objectType) {
+		return nil, fmt.Errorf("not a valid object type for the metadata endpoint: %s", objectType)
+	}
+
+	objectBytes, err := json.Marshal(objectPayload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal metadata object payload: %w", err)
+	}
+
+	reqUrl := Endpoints.MetaDataConfig + objectType + "/" + objectId
+
+	resp, err := RequestWithRetryAndRead(http.MethodPut, reqUrl, nil, &objectBytes, tenant, c7AppAuthEncoded, retryCount, rl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get metadata: %w", err)
+	}
+
+	var c7MetaData MetaDataConfig
+	if err := json.Unmarshal(*resp, &c7MetaData); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal metadata after attempted post: %w", err)
+	}
+
+	return &c7MetaData, nil
 }
