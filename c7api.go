@@ -163,14 +163,19 @@ func RequestWithRetryAndRead(method string, url string, queries map[string]strin
 		// 200-299 is success, return body and nil error
 		if ResponseIsOK(response.StatusCode) {
 			return &body, nil
+		}
+
+		// A missing resource won't appear on a retry, so fail fast.
+		if response.StatusCode == http.StatusNotFound {
+			break
+		}
+
+		// Exponential backoff based on retry count
+		if response.StatusCode == http.StatusTooManyRequests {
+			exponSleepTime := SLEEP_TIME * time.Duration(i)
+			time.Sleep(exponSleepTime)
 		} else {
-			// Exponential backoff based on retry count
-			if response.StatusCode == http.StatusTooManyRequests {
-				exponSleepTime := SLEEP_TIME * time.Duration(i)
-				time.Sleep(exponSleepTime)
-			} else {
-				time.Sleep(SLEEP_TIME)
-			}
+			time.Sleep(SLEEP_TIME)
 		}
 	}
 
@@ -183,6 +188,12 @@ func RequestWithRetryAndRead(method string, url string, queries map[string]strin
 		c7Error.StatusCode = response.StatusCode
 		c7Error.Err = errors.New("error unmarshalling Commerce7 Error Message: " + err.Error() + "json: " + string(body))
 		return &body, &c7Error
+	}
+
+	// Fall back to the HTTP status when the body didn't carry one,
+	// so callers can still switch on things like 404.
+	if c7Error.StatusCode == 0 {
+		c7Error.StatusCode = response.StatusCode
 	}
 
 	// Add the raw json body to the err as well in case needed.
