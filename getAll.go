@@ -1,6 +1,9 @@
 package c7api
 
-import "strconv"
+import (
+	"context"
+	"strconv"
+)
 
 // Paginator is implemented by wrapper types that contain:
 // - a slice of results (e.g. Orders, Products, Customers)
@@ -25,6 +28,12 @@ type Cursornator[T any] interface {
 }
 
 func GetAll[T any, W Paginator[T]](url string, baseQueries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]T, error) {
+	return GetAllContext[T, W](context.Background(), url, baseQueries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
+}
+
+// GetAllContext is GetAll with a caller-supplied context. Cancelling ctx stops
+// the walk, which matters here because this can be many requests.
+func GetAllContext[T any, W Paginator[T]](ctx context.Context, url string, baseQueries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]T, error) {
 	all := make([]T, 0, PageSize)
 
 	// Clone the base queries so we can safely mutate page/limit
@@ -42,7 +51,7 @@ func GetAll[T any, W Paginator[T]](url string, baseQueries map[string]string, re
 	for {
 		queries["page"] = strconv.Itoa(page)
 
-		wrapperPtr, err := Get[W](url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
+		wrapperPtr, err := GetContext[W](ctx, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
 		if err != nil {
 			return nil, err
 		}
@@ -80,6 +89,11 @@ func GetAll[T any, W Paginator[T]](url string, baseQueries map[string]string, re
 
 // Cursors do not require rate limiting for now
 func GetAllWithCursor[T any, W Cursornator[T]](url string, baseQueries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]T, error) {
+	return GetAllWithCursorContext[T, W](context.Background(), url, baseQueries, reqBody, tenant, c7AppAuthEncoded, retryCount)
+}
+
+// GetAllWithCursorContext is GetAllWithCursor with a caller-supplied context.
+func GetAllWithCursorContext[T any, W Cursornator[T]](ctx context.Context, url string, baseQueries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int) (*[]T, error) {
 	all := make([]T, 0, PageSize)
 
 	// Clone the base queries so we can safely mutate page/limit
@@ -103,7 +117,7 @@ func GetAllWithCursor[T any, W Cursornator[T]](url string, baseQueries map[strin
 			queries["cursor"] = cursor
 		}
 
-		wrapperPtr, err := Get[W](url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, nil)
+		wrapperPtr, err := GetContext[W](ctx, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, nil)
 		if err != nil {
 			return nil, err
 		}

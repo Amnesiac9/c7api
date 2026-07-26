@@ -2,6 +2,7 @@ package c7api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,7 +16,13 @@ const SLEEP_TIME = 500 * time.Millisecond
 const PageSize = 50
 
 func Get[T any](url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*T, error) {
-	data, err := RequestWithRetryAndRead(http.MethodGet, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
+	return GetContext[T](context.Background(), url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
+}
+
+// GetContext is Get with a caller-supplied context. Cancelling ctx aborts the
+// in-flight request and any pending retry backoff.
+func GetContext[T any](ctx context.Context, url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*T, error) {
+	data, err := RequestWithRetryAndReadContext(ctx, http.MethodGet, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl)
 	if err != nil {
 		return nil, err
 	}
@@ -28,6 +35,12 @@ func Get[T any](url string, queries map[string]string, reqBody *[]byte, tenant s
 }
 
 func Post[T any](object *T, url string, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
+	return PostContext(context.Background(), object, url, tenant, c7AppAuthEncoded, retryCount, rl)
+}
+
+// PostContext is Post with a caller-supplied context. Cancelling ctx aborts the
+// in-flight request and any pending retry backoff.
+func PostContext[T any](ctx context.Context, object *T, url string, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
 
 	if object == nil {
 		return nil, errors.New("object cannot be nil")
@@ -38,7 +51,7 @@ func Post[T any](object *T, url string, tenant string, c7AppAuthEncoded string, 
 		return nil, fmt.Errorf("marshalling: %w", err)
 	}
 
-	data, err := RequestWithRetryAndRead(http.MethodPost, url, nil, &bytes, tenant, c7AppAuthEncoded, retryCount, rl)
+	data, err := RequestWithRetryAndReadContext(ctx, http.MethodPost, url, nil, &bytes, tenant, c7AppAuthEncoded, retryCount, rl)
 	if err != nil {
 		return nil, fmt.Errorf("c7 post request: %w", err)
 	}
@@ -46,6 +59,12 @@ func Post[T any](object *T, url string, tenant string, c7AppAuthEncoded string, 
 }
 
 func Put[T any](object *T, url string, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
+	return PutContext(context.Background(), object, url, tenant, c7AppAuthEncoded, retryCount, rl)
+}
+
+// PutContext is Put with a caller-supplied context. Cancelling ctx aborts the
+// in-flight request and any pending retry backoff.
+func PutContext[T any](ctx context.Context, object *T, url string, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
 
 	if object == nil {
 		return nil, errors.New("object cannot be nil")
@@ -56,7 +75,7 @@ func Put[T any](object *T, url string, tenant string, c7AppAuthEncoded string, r
 		return nil, fmt.Errorf("marshalling: %w", err)
 	}
 
-	data, err := RequestWithRetryAndRead(http.MethodPut, url, nil, &bytes, tenant, c7AppAuthEncoded, retryCount, rl)
+	data, err := RequestWithRetryAndReadContext(ctx, http.MethodPut, url, nil, &bytes, tenant, c7AppAuthEncoded, retryCount, rl)
 	if err != nil {
 		return nil, fmt.Errorf("c7 put request: %w", err)
 	}
@@ -65,18 +84,27 @@ func Put[T any](object *T, url string, tenant string, c7AppAuthEncoded string, r
 
 // Basic request. Will return the response or error if any.
 func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, errorOnNotOK bool) (*http.Response, error) {
+	return RequestContext(context.Background(), method, url, reqBody, tenant, c7AppAuthEncoded, errorOnNotOK)
+}
+
+// RequestContext is Request with a caller-supplied context. Note that the
+// returned response body is still open, and the context must stay alive until
+// the caller has finished reading it.
+func RequestContext(ctx context.Context, method string, url string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, errorOnNotOK bool) (*http.Response, error) {
 	//
 	if url == "" || tenant == "" || c7AppAuthEncoded == "" {
 		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
+	}
+
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
 	if reqBody == nil {
 		reqBody = &[]byte{}
 	}
 
-	client := &http.Client{}
-
-	req, err := http.NewRequest(method, url, bytes.NewBuffer(*reqBody))
+	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(*reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("error creating GET request for C7: %v", err)
 	}
@@ -85,7 +113,7 @@ func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAut
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Add("Authorization", c7AppAuthEncoded)
 
-	response, err := client.Do(req)
+	response, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error making GET request to C7: %v", err)
 	}
@@ -104,7 +132,14 @@ func Request(method string, url string, reqBody *[]byte, tenant string, c7AppAut
 //
 // Min Retry Count: 0 | Max Retry Count: 10
 func RequestWithRetryAndRead(method string, url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
-	return requestWithRetryAndRead(method, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl, nil)
+	return requestWithRetryAndRead(context.Background(), method, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl, nil)
+}
+
+// RequestWithRetryAndReadContext is RequestWithRetryAndRead with a
+// caller-supplied context. Cancelling ctx aborts the in-flight request and any
+// pending retry backoff, and returns ctx.Err().
+func RequestWithRetryAndReadContext(ctx context.Context, method string, url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter) (*[]byte, error) {
+	return requestWithRetryAndRead(ctx, method, url, queries, reqBody, tenant, c7AppAuthEncoded, retryCount, rl, nil)
 }
 
 // Returns the fulfillment ids if there is any fulfillments on a C7 order.

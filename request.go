@@ -2,6 +2,7 @@ package c7api
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -16,10 +17,14 @@ import (
 // extraHeaders is applied after the standard tenant/content-type/auth headers,
 // so a caller can add to them or override them. The v2 API uses this for the
 // two headers it requires on top of the v1 set.
-func requestWithRetryAndRead(method string, url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter, extraHeaders map[string]string) (*[]byte, error) {
+func requestWithRetryAndRead(ctx context.Context, method string, url string, queries map[string]string, reqBody *[]byte, tenant string, c7AppAuthEncoded string, retryCount int, rl genericRateLimiter, extraHeaders map[string]string) (*[]byte, error) {
 	//
 	if url == "" || tenant == "" || c7AppAuthEncoded == "" {
 		return nil, fmt.Errorf("error getting JSON from C7: nil or blank value in arguments")
+	}
+
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
 	if reqBody == nil {
@@ -35,15 +40,21 @@ func requestWithRetryAndRead(method string, url string, queries map[string]strin
 		retryCount = maxRetryCount
 	}
 
-	client := &http.Client{}
 	response := &http.Response{StatusCode: 0}
 	body := []byte{}
 
 	for i := 0; i <= retryCount; i++ {
+		// The rate limiter and the sleeps below can hold us for a while, so
+		// check for cancellation before spending another attempt.
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
 		if rl != nil && !reflect.ValueOf(rl).IsNil() {
 			rl.Wait()
 		}
-		req, err := http.NewRequest(method, url, bytes.NewBuffer(*reqBody))
+
+		req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(*reqBody))
 		if err != nil {
 			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
 		}
@@ -64,14 +75,22 @@ func requestWithRetryAndRead(method string, url string, queries map[string]strin
 			req.Header.Set(k, v)
 		}
 
-		response, err = client.Do(req)
+		response, err = httpClient.Do(req)
 		if err != nil {
+			// A cancelled context surfaces here as an opaque *url.Error, so
+			// report ctx.Err() to keep errors.Is usable by the caller.
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return nil, ctxErr
+			}
 			return nil, fmt.Errorf("error making GET request to C7: %v", err)
 		}
 
 		body, err = io.ReadAll(response.Body)
 		response.Body.Close()
 		if err != nil {
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return nil, ctxErr
+			}
 			return nil, fmt.Errorf("error reading response body from C7: %v", err)
 		}
 
@@ -86,11 +105,12 @@ func requestWithRetryAndRead(method string, url string, queries map[string]strin
 		}
 
 		// Exponential backoff based on retry count
+		sleep := SLEEP_TIME
 		if response.StatusCode == http.StatusTooManyRequests {
-			exponSleepTime := SLEEP_TIME * time.Duration(i)
-			time.Sleep(exponSleepTime)
-		} else {
-			time.Sleep(SLEEP_TIME)
+			sleep = SLEEP_TIME * time.Duration(i)
+		}
+		if err := sleepCtx(ctx, sleep); err != nil {
+			return nil, err
 		}
 	}
 
