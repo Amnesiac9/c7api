@@ -31,6 +31,29 @@ func SetHTTPClient(client *http.Client) {
 	httpClient = client
 }
 
+// MaxBackoff caps the wait between retries. Without a cap, a call with the
+// maximum retryCount of 10 would end with a single sleep of over eight minutes.
+const MaxBackoff = 8 * time.Second
+
+// backoffDuration returns how long to wait before the next attempt, where i is
+// the zero-based index of the attempt that just failed: 500ms, 1s, 2s, 4s, 8s,
+// then held at MaxBackoff.
+//
+// The previous formula was SLEEP_TIME * i, which is linear rather than
+// exponential and — worse against a rate limiter — returns zero for i == 0, so
+// the first retry of a 429 went straight back out with no delay at all.
+func backoffDuration(i int) time.Duration {
+	if i < 0 {
+		i = 0
+	}
+
+	d := SLEEP_TIME << i
+	if d > MaxBackoff || d <= 0 { // d <= 0 guards against the shift overflowing
+		return MaxBackoff
+	}
+	return d
+}
+
 // sleepCtx waits for d, returning early with ctx.Err() if the context is
 // cancelled first. A retry loop that sleeps with time.Sleep can't be
 // cancelled, which is most of the value of accepting a context at all.

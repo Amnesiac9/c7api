@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"reflect"
-	"time"
 )
 
 // requestWithRetryAndRead is the shared implementation behind
@@ -104,13 +103,12 @@ func requestWithRetryAndRead(ctx context.Context, method string, url string, que
 			break
 		}
 
-		// Exponential backoff based on retry count
-		sleep := SLEEP_TIME
-		if response.StatusCode == http.StatusTooManyRequests {
-			sleep = SLEEP_TIME * time.Duration(i)
-		}
-		if err := sleepCtx(ctx, sleep); err != nil {
-			return nil, err
+		// Exponential backoff before the next attempt. Skipped on the final
+		// pass, where there is no next attempt to wait for.
+		if i < retryCount {
+			if err := sleepCtx(ctx, backoffDuration(i)); err != nil {
+				return nil, err
+			}
 		}
 	}
 
