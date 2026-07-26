@@ -54,6 +54,35 @@ func backoffDuration(i int) time.Duration {
 	return d
 }
 
+// retryableStatus reports whether a failed response is worth repeating.
+//
+// 429 and 5xx are transient, and 408 is a server-side read timeout that a
+// retry can clear. Every other 4xx is a statement about the request itself — a
+// bad token, a malformed body, a missing resource — and will return exactly
+// the same thing on the next attempt, so retrying only adds latency before the
+// caller sees an error it was always going to get.
+func retryableStatus(statusCode int) bool {
+	switch {
+	case statusCode == http.StatusTooManyRequests:
+		return true
+	case statusCode == http.StatusRequestTimeout:
+		return true
+	case statusCode >= 500 && statusCode <= 599:
+		return true
+	default:
+		return false
+	}
+}
+
+// backoff waits before the next attempt. It is a no-op on the final pass,
+// where there is no next attempt to wait for.
+func backoff(ctx context.Context, attempt int, retryCount int) error {
+	if attempt >= retryCount {
+		return nil
+	}
+	return sleepCtx(ctx, backoffDuration(attempt))
+}
+
 // sleepCtx waits for d, returning early with ctx.Err() if the context is
 // cancelled first. A retry loop that sleeps with time.Sleep can't be
 // cancelled, which is most of the value of accepting a context at all.

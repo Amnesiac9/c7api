@@ -42,6 +42,11 @@ func requestWithRetryAndRead(ctx context.Context, method string, url string, que
 	response := &http.Response{StatusCode: 0}
 	body := []byte{}
 
+	// Set when an attempt fails before producing a readable response. Cleared
+	// as soon as one does, so it only survives if the *last* attempt failed
+	// at the transport level and there is no C7 error body to report instead.
+	var lastErr error
+
 	for i := 0; i <= retryCount; i++ {
 		// The rate limiter and the sleeps below can hold us for a while, so
 		// check for cancellation before spending another attempt.
@@ -53,6 +58,7 @@ func requestWithRetryAndRead(ctx context.Context, method string, url string, que
 			rl.Wait()
 		}
 
+		// A malformed method or url won't start working on a retry.
 		req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(*reqBody))
 		if err != nil {
 			return nil, fmt.Errorf("error creating GET request for C7: %v", err)
@@ -74,42 +80,61 @@ func requestWithRetryAndRead(ctx context.Context, method string, url string, que
 			req.Header.Set(k, v)
 		}
 
-		response, err = httpClient.Do(req)
+		// Do returns a nil response alongside its error, so keep it out of
+		// `response` until we know the attempt produced something readable.
+		resp, err := httpClient.Do(req)
 		if err != nil {
 			// A cancelled context surfaces here as an opaque *url.Error, so
 			// report ctx.Err() to keep errors.Is usable by the caller.
 			if ctxErr := ctx.Err(); ctxErr != nil {
 				return nil, ctxErr
 			}
-			return nil, fmt.Errorf("error making GET request to C7: %v", err)
+			// Refused connection, DNS failure, timeout, dropped conn: the most
+			// transient failures there are, and the ones most worth retrying.
+			lastErr = fmt.Errorf("error making GET request to C7: %v", err)
+			if err := backoff(ctx, i, retryCount); err != nil {
+				return nil, err
+			}
+			continue
 		}
 
-		body, err = io.ReadAll(response.Body)
-		response.Body.Close()
+		body, err = io.ReadAll(resp.Body)
+		resp.Body.Close()
 		if err != nil {
 			if ctxErr := ctx.Err(); ctxErr != nil {
 				return nil, ctxErr
 			}
-			return nil, fmt.Errorf("error reading response body from C7: %v", err)
+			// A truncated body is transient in the same way.
+			lastErr = fmt.Errorf("error reading response body from C7: %v", err)
+			if err := backoff(ctx, i, retryCount); err != nil {
+				return nil, err
+			}
+			continue
 		}
+
+		response = resp
+		lastErr = nil
 
 		// 200-299 is success, return body and nil error
 		if ResponseIsOK(response.StatusCode) {
 			return &body, nil
 		}
 
-		// A missing resource won't appear on a retry, so fail fast.
-		if response.StatusCode == http.StatusNotFound {
+		// Fail fast on anything a retry can't change, so the caller sees the
+		// error immediately instead of after the full retry budget.
+		if !retryableStatus(response.StatusCode) {
 			break
 		}
 
-		// Exponential backoff before the next attempt. Skipped on the final
-		// pass, where there is no next attempt to wait for.
-		if i < retryCount {
-			if err := sleepCtx(ctx, backoffDuration(i)); err != nil {
-				return nil, err
-			}
+		if err := backoff(ctx, i, retryCount); err != nil {
+			return nil, err
 		}
+	}
+
+	// Every attempt failed at the transport level, so there is no response
+	// body and no C7 error message to unmarshal.
+	if lastErr != nil {
+		return nil, lastErr
 	}
 
 	// Read the C7 Error if present
