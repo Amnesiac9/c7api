@@ -79,8 +79,6 @@ func PostFulfillment(orderId string, fulfillment *FulfillmentItems, tenant strin
 // message: the status code is the only thing that separates "this line is already fulfilled"
 // from a real failure, and wrapping is what keeps errors.As able to reach it.
 func PostFulfillmentContext(ctx context.Context, orderId string, fulfillment *FulfillmentItems, tenant string, auth string, attempts int, rl genericRateLimiter) (*[]byte, error) {
-	// An empty id builds ".../order//fulfillment", which is a different route entirely.
-	// Fail here rather than let Commerce7 answer something that looks unrelated.
 	if orderId == "" {
 		return nil, errors.New("c7api: cannot post a fulfillment with an empty order id")
 	}
