@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 )
@@ -153,4 +154,83 @@ func CreateTag(tenant, auth, objectType, tagTitle string, retryCount int, rl gen
 	}
 
 	return &respTag, nil
+}
+
+// tagUrl returns the url for a single tag, e.g. https://api.commerce7.com/v1/tag/customer/{id}
+func tagUrl(objectType, tagId string) (string, error) {
+	objectType = strings.ToLower(objectType)
+	if objectType != "order" && objectType != "customer" {
+		return "", errors.New("invalid object type for tag. Must be either: order || customer")
+	}
+	if tagId == "" {
+		return "", errors.New("no tagId provided")
+	}
+	return Endpoints.Tag + "/" + objectType + "/" + tagId, nil
+}
+
+// GetTagById returns a single tag. A missing tag returns a *C7Error with StatusCode 404.
+func GetTagById(tenant, auth, objectType, tagId string, retryCount int, rl genericRateLimiter) (*Tag, error) {
+	reqUrl, err := tagUrl(objectType, tagId)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := RequestWithRetryAndRead("GET", reqUrl, nil, nil, tenant, auth, retryCount, rl)
+	if err != nil {
+		return nil, fmt.Errorf("while getting tag: %w", err)
+	}
+
+	tag := Tag{}
+	if err := json.Unmarshal(*resp, &tag); err != nil {
+		return nil, fmt.Errorf("while unmarshalling tag: %w", err)
+	}
+	return &tag, nil
+}
+
+// UpdateTag renames a manual tag. The tag keeps its id, so it stays on every object it's applied to.
+func UpdateTag(tenant, auth, objectType, tagId, title string, retryCount int, rl genericRateLimiter) (*Tag, error) {
+	reqUrl, err := tagUrl(objectType, tagId)
+	if err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(title) == "" {
+		return nil, errors.New("no title provided")
+	}
+
+	payload, err := json.Marshal(TagPayload_Create{Title: title, Type: "Manual"})
+	if err != nil {
+		return nil, fmt.Errorf("while marshalling tag payload: %w", err)
+	}
+
+	resp, err := RequestWithRetryAndRead("PUT", reqUrl, nil, &payload, tenant, auth, retryCount, rl)
+	if err != nil {
+		return nil, fmt.Errorf("while updating tag: %w", err)
+	}
+
+	tag := Tag{}
+	if err := json.Unmarshal(*resp, &tag); err != nil {
+		return nil, fmt.Errorf("while unmarshalling tag: %w", err)
+	}
+	return &tag, nil
+}
+
+// DeleteTag deletes a tag, which also removes it from every object it's applied to.
+// A tag that's already gone counts as deleted.
+func DeleteTag(tenant, auth, objectType, tagId string, retryCount int, rl genericRateLimiter) error {
+	reqUrl, err := tagUrl(objectType, tagId)
+	if err != nil {
+		return err
+	}
+
+	_, err = RequestWithRetryAndRead("DELETE", reqUrl, nil, nil, tenant, auth, retryCount, rl)
+	if err != nil && !IsNotFound(err) {
+		return fmt.Errorf("while deleting tag: %w", err)
+	}
+	return nil
+}
+
+// IsNotFound reports whether err is a Commerce7 404.
+func IsNotFound(err error) bool {
+	var c7Err *C7Error
+	return errors.As(err, &c7Err) && c7Err.StatusCode == http.StatusNotFound
 }
