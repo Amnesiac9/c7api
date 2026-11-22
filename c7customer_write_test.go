@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -94,5 +95,18 @@ func TestUpdateCustomer(t *testing.T) {
 	}
 	if req.Method != http.MethodPut || req.URL.Path != "/customer/c9" {
 		t.Errorf("got %s %s, want PUT /customer/c9", req.Method, req.URL.Path)
+	}
+}
+
+func TestUpdateCustomer_KeepsEmailIds(t *testing.T) {
+	_, body := fakeCustomerServer(t, http.StatusOK, `{"id":"c9"}`)
+
+	w := CustomerWrite{Emails: []CustomerEmail{{Id: "e1", Email: "a@example.com", Status: "Valid"}}, Phones: []CustomerPhone{{Phone: "555"}}}
+	if _, err := UpdateCustomerContext(context.Background(), "c9", w, "t", "Basic x", 0, nil); err != nil {
+		t.Fatal(err)
+	}
+	want := `"emails":[{"id":"e1","email":"a@example.com","status":"Valid"}],"phones":[{"phone":"555"}]`
+	if !strings.Contains(string(*body), want) {
+		t.Errorf("sent %s", *body)
 	}
 }

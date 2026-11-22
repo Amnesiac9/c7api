@@ -21,11 +21,16 @@ type CustomerWrite struct {
 	IsSendTransactionEmail *bool           `json:"isSendTransactionEmail,omitempty"`
 }
 
+// CustomerEmail and CustomerPhone keep the id and status of ones the customer already has, so
+// an update leaves them as they are. New ones have neither.
 type CustomerEmail struct {
-	Email string `json:"email"`
+	Id     string `json:"id,omitempty"`
+	Email  string `json:"email"`
+	Status string `json:"status,omitempty"`
 }
 
 type CustomerPhone struct {
+	Id    string `json:"id,omitempty"`
 	Phone string `json:"phone"`
 }
 
