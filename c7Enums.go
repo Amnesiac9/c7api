@@ -83,6 +83,44 @@ const (
 	WebhookActionUpdate     = "Update"
 	WebhookActionBulkUpdate = "Bulk Update"
 	WebhookActionDelete     = "Delete"
+	WebhookActionSend       = "Send"
+)
+
+// Webhook Object, as Commerce7 names them in web-hook registrations and payloads.
+const (
+	WebhookObjectAllocation         = "Allocation"
+	WebhookObjectCart               = "Cart"
+	WebhookObjectClub               = "Club"
+	WebhookObjectClubPackage        = "Club Package"
+	WebhookObjectClubMembership     = "Club Membership"
+	WebhookObjectCollection         = "Collection"
+	WebhookObjectCustomer           = "Customer"
+	WebhookObjectCustomerAddress    = "Customer Address"
+	WebhookObjectCustomerCreditCard = "Customer Credit Card"
+	WebhookObjectCoupon             = "Coupon"
+	WebhookObjectGroup              = "Group"
+	WebhookObjectNote               = "Note"
+	WebhookObjectOrder              = "Order"
+	WebhookObjectOrderFulfillment   = "Order Fulfillment"
+	WebhookObjectProduct            = "Product"
+	WebhookObjectPromotion          = "Promotion"
+	WebhookObjectReservation        = "Reservation"
+	WebhookObjectTag                = "Tag"
+	WebhookObjectTransactionEmail   = "Transaction Email"
+)
+
+// Webhook Status. Commerce7 disables a webhook whose deliveries keep failing for 48 hours,
+// and a disabled webhook can't be enabled again: it has to be deleted and recreated.
+const (
+	WebhookStatusEnabled  = "Enabled"
+	WebhookStatusDisabled = "Disabled"
+)
+
+// Note Type
+const (
+	NoteTypeNote = "Note"
+	NoteTypeFlag = "Flag"
+	NoteTypeTask = "Task"
 )
 
 // Club Admin Status
