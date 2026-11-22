@@ -35,6 +35,10 @@ type endpoints struct {
 	WineVarietal                  string // "https://api.commerce7.com/v1/wine-varietal" - Get valid wine varietals.
 	WebHook                       string // "https://api.commerce7.com/v1/web-hook" - https://developer.commerce7.com/docs/webhooks
 	Note                          string // "https://api.commerce7.com/v1/note" - Notes, flags and tasks on orders and customers.
+	ClubPackage                   string // "https://api.commerce7.com/v1/club-package"
+	Promotion                     string // "https://api.commerce7.com/v1/promotion"
+	PosProfile                    string // "https://api.commerce7.com/v1/pos-profile"
+	Shipping                      string // "https://api.commerce7.com/v1/shipping" - shipping zones, each with its services
 }
 
 func GetEndpoints(baseURL string) *endpoints {
@@ -67,6 +71,10 @@ func GetEndpoints(baseURL string) *endpoints {
 		WineVarietal:                  baseURL + "/wine-varietal",
 		WebHook:                       baseURL + "/web-hook",
 		Note:                          baseURL + "/note",
+		ClubPackage:                   baseURL + "/club-package",
+		Promotion:                     baseURL + "/promotion",
+		PosProfile:                    baseURL + "/pos-profile",
+		Shipping:                      baseURL + "/shipping",
 	}
 }
 
