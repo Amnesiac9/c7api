@@ -39,6 +39,7 @@ type endpoints struct {
 	Promotion                     string // "https://api.commerce7.com/v1/promotion"
 	PosProfile                    string // "https://api.commerce7.com/v1/pos-profile"
 	Shipping                      string // "https://api.commerce7.com/v1/shipping" - shipping zones, each with its services
+	SalesAttribute                string // "https://api.commerce7.com/v1/sales-attribute" - values an order's salesAttributeCode can take
 }
 
 func GetEndpoints(baseURL string) *endpoints {
@@ -75,6 +76,7 @@ func GetEndpoints(baseURL string) *endpoints {
 		Promotion:                     baseURL + "/promotion",
 		PosProfile:                    baseURL + "/pos-profile",
 		Shipping:                      baseURL + "/shipping",
+		SalesAttribute:                baseURL + "/sales-attribute",
 	}
 }
 
